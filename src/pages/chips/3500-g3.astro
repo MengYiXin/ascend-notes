@@ -1,0 +1,221 @@
+---
+import { getEntry } from 'astro:content';
+import ChipLayout from '@layouts/ChipLayout.astro';
+import DataTable from '@components/DataTable.astro';
+import ChartBlock from '@components/ChartBlock.astro';
+import StatusBadge from '@components/StatusBadge.astro';
+import Footnote from '@components/Footnote.astro';
+
+const entry = await getEntry('chips', '3500-g3');
+if (!entry) throw new Error('3500-g3 not found');
+const data = entry.data;
+
+const headings = [
+  { depth: 2, slug: 'overview', text: '1. 概述' },
+  { depth: 2, slug: 'specs', text: '2. 硬件规格' },
+  { depth: 2, slug: 'models', text: '3. 适配模型' },
+  { depth: 2, slug: 'perf', text: '4. 实测性能' },
+  { depth: 3, slug: 'perf-ttft', text: '4.1 TTFT 与并发' },
+  { depth: 3, slug: 'perf-tps', text: '4.2 吞吐' },
+  { depth: 2, slug: 'cases', text: '5. 部署案例' },
+  { depth: 2, slug: 'sources', text: '6. 数据来源' }
+];
+
+const leftNav = [
+  {
+    title: '芯片 / 服务器',
+    items: [
+      { href: '/chips/3500-g3', label: '3500 G3' },
+      { href: '/chips/910b4', label: '910B4' },
+      { href: '/chips/910c', label: '910C' },
+      { href: '/chips/950', label: '950 (路线图)' }
+    ]
+  },
+  {
+    title: '模型与基准',
+    items: [
+      { href: '/models', label: '模型适配总表' },
+      { href: '/benchmarks/ttft', label: 'TTFT' },
+      { href: '/benchmarks/throughput', label: '吞吐' },
+      { href: '/benchmarks/e2e', label: 'E2E' }
+    ]
+  }
+];
+
+// 3500 G3 实测性能：DS-R1-671B Int8
+const perfRows = data.models.map(m => ({
+  config: m.config,
+  cards: m.cards,
+  model: m.model + ' / ' + m.quantization,
+  concurrency: Object.keys(m.ttft_ms ?? {}).join(', ') || '—',
+  ttft_ms: Object.values(m.ttft_ms ?? {}).map(v => v != null ? `${v}` : '—').join(', '),
+  tpot_ms: Object.values(m.tpot_ms ?? {}).map(v => v != null ? `${v}` : '—').join(', '),
+  throughput_tps: m.throughput_tps ?? '—'
+}));
+
+// 图表：TTFT vs 并发
+const ttftChartOption = {
+  tooltip: { trigger: 'axis' },
+  legend: { data: ['TTFT (ms)'], top: 0 },
+  grid: { left: 60, right: 20, top: 40, bottom: 60 },
+  xAxis: {
+    type: 'category',
+    data: ['10', '30', '50', '100'],
+    name: '并发'
+  },
+  yAxis: { type: 'value', name: 'TTFT (ms)' },
+  series: [{
+    name: 'TTFT (ms)',
+    type: 'bar',
+    data: [796.57, 1586.94, 2302.82, 2690.73],
+    itemStyle: { color: '#06c' }
+  }]
+};
+
+// 图表：吞吐 vs 并发
+const tpsChartOption = {
+  tooltip: { trigger: 'axis' },
+  legend: { data: ['吞吐 (tps)'], top: 0 },
+  grid: { left: 60, right: 20, top: 40, bottom: 60 },
+  xAxis: { type: 'category', data: ['10', '30', '50', '100'], name: '并发' },
+  yAxis: { type: 'value', name: '总吞吐 (tps)' },
+  series: [{
+    name: '吞吐 (tps)',
+    type: 'bar',
+    data: [462.54, 1010.78, 1323.03, 1931.48],
+    itemStyle: { color: '#0075eb' }
+  }]
+};
+---
+
+<ChipLayout
+  title={`${data.chip_short} · Ascend Notes`}
+  description={`${data.chip} 性能基线、模型适配与部署案例`}
+  breadcrumb={[
+    { label: '首页', href: '/' },
+    { label: '芯片', href: '/' },
+    { label: data.chip_short }
+  ]}
+  leftNav={leftNav}
+  headings={headings}
+>
+  <header class="mb-8">
+    <div class="text-meta text-sm mb-2">主力 · 满血 671B 推理</div>
+    <h1 class="h1-title">昇腾 {data.chip_short} ({data.aliases[0]})</h1>
+    <p class="mt-3 text-ink-700 dark:text-ink-200">{data.summary}</p>
+  </header>
+
+  <h2 id="overview" class="anchor-offset h2-title">1. 概述</h2>
+  <ul class="text-ink-700 dark:text-ink-200 space-y-1.5">
+    <li><b>定位</b>：16 卡集群，部署满血 671B（DeepSeek-R1 / V3）等大模型 Int8 长上下文推理</li>
+    <li><b>厂商</b>：{data.vendor}</li>
+    <li><b>内存</b>：单卡 {data.memory.per_card_gb}GB {data.memory.type}</li>
+    <li><b>算力</b>：FP16 {data.compute.fp16_tflops} TFLOPS · INT8 {data.compute.int8_tops} TOPS（单卡）</li>
+    <li><b>互联</b>：{data.interconnect.type} {data.interconnect.bandwidth_gbps} GB/s {data.interconnect.topology}</li>
+    <li><b>软件栈</b>：{data.software.os} · CANN {data.software.cann} · MindIE {data.software.mindie} · {data.software.frameworks.join(' / ')}</li>
+    <li><b>参考价</b>：¥{data.price_rmb_wan?.low}-{data.price_rmb_wan?.high} 万（{data.price_rmb_wan?.note}）</li>
+  </ul>
+
+  <h2 id="specs" class="anchor-offset h2-title">2. 硬件规格</h2>
+  <DataTable
+    caption="HuaKun AT3500 G3 (64G) 16 卡集群规格"
+    columns={[
+      { key: 'k', label: '项' },
+      { key: 'v', label: '规格' }
+    ]}
+    rows={[
+      { k: '芯片', v: '昇腾 910_3' },
+      { k: '单卡显存', v: `${data.memory.per_card_gb}GB ${data.memory.type}` },
+      { k: '总卡数', v: '16' },
+      { k: 'FP16 算力（单卡）', v: `${data.compute.fp16_tflops} TFLOPS` },
+      { k: 'INT8 算力（单卡）', v: `${data.compute.int8_tops} TOPS` },
+      { k: '整机 FP16 算力', v: `${(data.compute.fp16_tflops ?? 0) * 16} TFLOPS` },
+      { k: '互联', v: `${data.interconnect.type} ${data.interconnect.bandwidth_gbps} GB/s ${data.interconnect.topology}` },
+      { k: 'CPU', v: data.system.cpu },
+      { k: 'CPU 核数', v: `${data.system.cpu_cores}` },
+      { k: '内存', v: `${data.system.ram_gb}GB` },
+      { k: '网络', v: data.system.nic },
+      { k: '电源', v: `${data.system.psu_w}W` },
+      { k: '操作系统', v: data.software.os },
+      { k: '加速库', v: `${data.software.cann} · ${data.software.mindie}` },
+      { k: '推理框架', v: data.software.frameworks.join(' / ') }
+    ]}
+  />
+
+  <h2 id="models" class="anchor-offset h2-title">3. 适配模型</h2>
+  <div class="overflow-x-auto rounded-md border border-default not-prose">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>模型</th>
+          <th>量化</th>
+          <th>框架</th>
+          <th>状态</th>
+          <th>卡数</th>
+          <th>配置</th>
+        </tr>
+      </thead>
+      <tbody>
+        {data.models.map(m => (
+          <tr>
+            <td>{m.model}</td>
+            <td><code class="font-mono text-sm">{m.quantization}</code></td>
+            <td>{m.framework}</td>
+            <td><StatusBadge status={m.status} /></td>
+            <td class="text-right num">{m.cards}</td>
+            <td class="text-meta">{m.config}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+
+  <h2 id="perf" class="anchor-offset h2-title">4. 实测性能</h2>
+  <p class="text-meta mb-4">
+    数据来自华鲲振宇提供的 {data.chip} 16 卡集群基线表（[src-001]）。
+  </p>
+
+  <h3 id="perf-ttft" class="anchor-offset h3-title">4.1 TTFT 与并发</h3>
+  <p class="text-ink-700 dark:text-ink-200">
+    DS-R1-671B Int8 在不同并发下的首 token 延迟：
+  </p>
+  <ChartBlock
+    id="ttft-chart"
+    option={ttftChartOption}
+    height="280px"
+    caption="图：TTFT vs 并发（3500 G3 ×16 / DS-R1-671B Int8 / p=2048, o=2048）"
+  />
+
+  <h3 id="perf-tps" class="anchor-offset h3-title">4.2 吞吐</h3>
+  <ChartBlock
+    id="tps-chart"
+    option={tpsChartOption}
+    height="280px"
+    caption="图：总吞吐 vs 并发（3500 G3 ×16 / DS-R1-671B Int8 / p=2048, o=2048）"
+  />
+
+  <DataTable
+    caption="3500 G3 16 卡集群实测数据明细"
+    columns={[
+      { key: 'model', label: '模型 / 量化' },
+      { key: 'cards', label: '卡数', align: 'right', mono: true },
+      { key: 'config', label: '配置 (p/o, 并发)' },
+      { key: 'concurrency', label: '并发' },
+      { key: 'ttft_ms', label: 'TTFT (ms)' },
+      { key: 'tpot_ms', label: 'TPOT (ms)' },
+      { key: 'throughput_tps', label: '总吞吐 (tps)', align: 'right', mono: true }
+    ]}
+    rows={perfRows}
+  />
+
+  <h2 id="cases" class="anchor-offset h2-title">5. 部署案例</h2>
+  <ul class="text-ink-700 dark:text-ink-200 space-y-2">
+    {data.use_cases.map(uc => <li>· {uc}</li>)}
+  </ul>
+
+  <h2 id="sources" class="anchor-offset h2-title">6. 数据来源</h2>
+  <Footnote sources={[
+    { id: 'src-001', title: '3500G3 性能基线（DeepSeek-R1-671B Int8）', date: '2026-09-23' },
+    { id: 'src-006', title: '华鲲昇腾产品介绍 0828 (PPT)', date: '2026-08' }
+  ]} />
+</ChipLayout>

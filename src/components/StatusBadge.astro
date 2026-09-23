@@ -1,0 +1,22 @@
+---
+interface Props {
+  status: 'verified' | 'partial' | 'unsupported' | 'untested';
+}
+const { status } = Astro.props;
+const labels = {
+  verified: '已验证',
+  partial: '部分验证',
+  unsupported: '不支持',
+  untested: '未测'
+};
+---
+
+<span class:list={[
+  'badge',
+  status === 'verified' && 'badge-verified',
+  status === 'partial' && 'badge-partial',
+  status === 'unsupported' && 'badge-unsupported',
+  status === 'untested' && 'badge-untested'
+]}>
+  {labels[status]}
+</span>

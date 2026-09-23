@@ -1,0 +1,187 @@
+chip: Atlas 800I A3 560T (昇腾 910C)
+chip_short: 910C
+aliases:
+  - 910C
+  - 800I A3
+  - 800I A3 560T
+  - HuaKun AT958 B3
+category: flagship
+status: shipping
+vendor: 华为 / 华鲲振宇
+release: '2025'
+
+summary: >-
+  新一代 8 卡旗舰推理服务器，单卡 128GB HBM + 互联带宽 780GB/s，
+  FP16 算力 ≥560 TFLOPS/卡。是 V4 Flash / V4 Pro / GLM5 等
+  主流模型的推荐部署平台。
+
+memory:
+  per_card_gb: 128
+  type: HBM3
+
+compute:
+  fp16_tflops: 560
+  int8_tops: 1120
+  bf16_tflops: 560
+
+interconnect:
+  type: HCCS / RoCE
+  bandwidth_gbps: 780
+  topology: 8 卡全互联 + 8×400GE RoCE
+
+system:
+  cpu: 鲲鹏 920 (ARM) ×4
+  cpu_cores: 320
+  ram_gb: 1024
+  nic: 8×400GE + 2×100GE + 2×10/25GE
+  psu_w: 3600
+
+software:
+  os: openEuler 22.03
+  cann: 8.0.RC2
+  mindie: 2.0.RC2
+  frameworks:
+    - vLLM-Ascend (deepseekv4-a3)
+    - MindIE
+    - MindSpore
+
+price_rmb_wan:
+  low: null
+  high: null
+  note: 公开报价未披露，建议询价华鲲振宇/华为政企
+
+use_cases:
+  - DeepSeek-V4-Flash / V4-Pro 主力部署（单机 / 双机）
+  - GLM5 单机部署
+  - 满血 DS-V3 / R1 推理（多机大 EP）
+  - 1M 超长上下文、Prefix Cache、Function Call 全功能
+
+notes:
+  - 910C 是 910B 的下一代，对外带宽与算力均显著提升
+  - vLLM-Ascend 提供 deepseekv4-a3 镜像，支持 PD 分离、A2/A3 跨代混部
+  - 单机 8 卡版本（HuaKun AT958 B3）：560T@INT8 / 4.4 PFLOPS@FP16
+  - 单节点 626T 版本：626 TFLOPS FP16 / 10.8 POPS INT8
+
+models:
+  - model: DeepSeek-V4-Flash
+    params: 激活 ~4B
+    quantization: W8A8
+    framework: vLLM-Ascend
+    status: verified
+    cards: 8
+    config: '单机 910C / p=8k/o=1k, 并发=64'
+    ttft_ms:
+      '64': 11000
+    tpot_ms: {}
+    e2e_s: 11
+    throughput_tps: 6694.92
+    vram_gb: null
+  - model: DeepSeek-V4-Flash
+    params: 激活 ~4B
+    quantization: W8A8
+    framework: vLLM-Ascend
+    status: verified
+    cards: 8
+    config: '单机 910C / p=4k/o=1k, 并发=64'
+    ttft_ms:
+      '64': 7900
+    tpot_ms: {}
+    e2e_s: 7.9
+    throughput_tps: 4266.05
+    vram_gb: null
+  - model: DeepSeek-V4-Flash
+    params: 激活 ~4B
+    quantization: W8A8
+    framework: vLLM-Ascend
+    status: verified
+    cards: 8
+    config: 'Atlas 800I A3 560T / 32 卡大 EP, p=8k/o=1k'
+    ttft_ms:
+      '1': 15.4282
+    tpot_ms:
+      '1': 3833.3
+    e2e_s: 23.9
+    throughput_tps: 117.294
+    vram_gb: null
+  - model: DeepSeek-V4-Pro
+    params: 激活 ~22B
+    quantization: W4A8
+    framework: vLLM-Ascend
+    status: verified
+    cards: 16
+    config: '双机 910C (DP2+TP16) / p=8k/o=1k, 并发=1 (低时延)'
+    ttft_ms:
+      '1': 1920.8
+    tpot_ms:
+      '1': 34.5
+    e2e_s: 37.241
+    throughput_tps: 27.4957
+    vram_gb: null
+  - model: DeepSeek-V4-Pro
+    params: 激活 ~22B
+    quantization: W4A8
+    framework: vLLM-Ascend
+    status: verified
+    cards: 16
+    config: '双机 910C / p=32k/o=1k, 并发≈4 (高吞吐)'
+    ttft_ms:
+      '4': 10573.7
+    tpot_ms:
+      '4': 49.1
+    e2e_s: 60.783
+    throughput_tps: 66.7946
+    vram_gb: null
+  - model: DeepSeek-V4-Pro
+    params: 激活 ~22B
+    quantization: W4A8
+    framework: vLLM-Ascend
+    status: verified
+    cards: 16
+    config: '双机 910C / p=128k/o=1k, Prefix Cache 命中率 0.9, 并发≈6'
+    ttft_ms:
+      '6': 11258
+    tpot_ms:
+      '6': 47
+    e2e_s: 59.34
+    throughput_tps: 103.0374
+    vram_gb: null
+  - model: DeepSeek-V4-Pro
+    params: 激活 ~22B
+    quantization: W4A8
+    framework: vLLM-Ascend
+    status: verified
+    cards: 16
+    config: '双机 910C / p=1M/o=1k, Prefix Cache 99% 但不命中 (待优化)'
+    ttft_ms:
+      '1': 666101
+    tpot_ms:
+      '1': 52
+    e2e_s: 2877026
+    throughput_tps: 1.42
+    vram_gb: null
+  - model: GLM5
+    params: 激活参数未公开
+    quantization: W4A8
+    framework: vLLM-Ascend
+    status: verified
+    cards: 8
+    config: '单机 910C / p=4k/o=1k, 并发=16'
+    ttft_ms:
+      '16': 6400
+    tpot_ms: {}
+    e2e_s: 6.4
+    throughput_tps: 1035.71
+    vram_gb: null
+  - model: GLM5
+    params: 激活参数未公开
+    quantization: W4A8
+    framework: vLLM-Ascend
+    status: verified
+    cards: 8
+    config: '单机 910C / p=2k/o=2k, 并发=16'
+    ttft_ms:
+      '16': 3400
+    tpot_ms: {}
+    e2e_s: 3.4
+    throughput_tps: 604.63
+    vram_gb: null

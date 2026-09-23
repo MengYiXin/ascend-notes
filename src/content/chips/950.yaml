@@ -1,0 +1,60 @@
+chip: Ascend 950
+chip_short: '950'
+aliases:
+  - 昇腾 950
+  - Ascend 950
+category: roadmap
+status: roadmap
+vendor: 华为
+release: '2026-2027 (预计)'
+
+summary: >-
+  华为规划的下一代昇腾芯片，定位为 910C 的下一代旗舰，
+  预计将在算力、显存带宽、HBM 容量、互联带宽上全面升级。
+  目前暂无第三方实测数据，本页作为**路线图占位**。
+
+memory:
+  per_card_gb: null
+  type: HBM3e (预计)
+
+compute:
+  fp16_tflops: null
+  int8_tops: null
+  bf16_tflops: null
+
+interconnect:
+  type: HCCS 下一代
+  bandwidth_gbps: null
+  topology: 待官方披露
+
+system:
+  cpu: 鲲鹏下一代
+  cpu_cores: null
+  ram_gb: null
+  nic: null
+  psu_w: null
+
+software:
+  os: openEuler
+  cann: 待定
+  mindie: 待定
+  frameworks:
+    - vLLM-Ascend
+    - MindIE
+
+price_rmb_wan:
+  low: null
+  high: null
+  note: 暂无定价信息
+
+use_cases:
+  - 千亿/万亿参数 MoE 推理
+  - 1M+ 长上下文
+  - 多模态融合推理
+
+notes:
+  - 暂无公开 SPEC 与实测数据，请勿引用本页任何数字作为决策依据
+  - 一旦 950 商用，本页会按 [3500 G3 / 910B4 / 910C] 的同等结构补齐
+  - 关注信源：昇腾官网 / 华为开发者大会 / 工业和信息化部公开材料
+
+models: []

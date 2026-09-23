@@ -1,0 +1,54 @@
+---
+interface Props {
+  id: string;
+  option: any;
+  height?: string;
+  caption?: string;
+}
+const { id, option, height = '320px', caption } = Astro.props;
+const optionJson = JSON.stringify(option);
+---
+
+<figure class="my-6 not-prose">
+  {caption && <figcaption class="text-meta text-sm mb-2">{caption}</figcaption>}
+  <div
+    id={id}
+    class="rounded-md border border-default bg-page-2"
+    style={`height: ${height};`}
+    data-echart-option={optionJson}
+  ></div>
+</figure>
+
+<script>
+  import * as echarts from 'echarts';
+
+  function isDark() {
+    return document.documentElement.classList.contains('dark');
+  }
+
+  function renderAll() {
+    document.querySelectorAll<HTMLElement>('[data-echart-option]').forEach(el => {
+      if ((el as any)._echart) return; // 避免重复渲染
+      const optionJson = el.getAttribute('data-echart-option') || '{}';
+      const option = JSON.parse(optionJson);
+      const chart = echarts.init(el, isDark() ? 'dark' : undefined);
+      chart.setOption(option);
+      (el as any)._echart = chart;
+
+      window.addEventListener('resize', () => chart.resize());
+    });
+  }
+
+  renderAll();
+  document.addEventListener('themechange', () => {
+    document.querySelectorAll<HTMLElement>('[data-echart-option]').forEach(el => {
+      const chart = (el as any)._echart;
+      const optionJson = el.getAttribute('data-echart-option') || '{}';
+      const option = JSON.parse(optionJson);
+      if (chart) chart.dispose();
+      const next = echarts.init(el, isDark() ? 'dark' : undefined);
+      next.setOption(option);
+      (el as any)._echart = next;
+    });
+  });
+</script>

@@ -1,0 +1,124 @@
+chip: HuaKun AT3500 G3
+chip_short: 3500 G3
+aliases:
+  - AT3500 G3
+  - 3500 G3
+  - HuaKun AT3500 G3 (64G)
+category: legacy
+status: shipping
+vendor: 华鲲振宇
+release: '2024'
+
+summary: >-
+  16 卡集群部署的入门/主力推理方案，单卡 64GB HBM，主要承担
+  DeepSeek-R1-671B 等满血 MoE 模型的 Int8 长上下文推理。
+
+memory:
+  per_card_gb: 64
+  type: HBM2e
+
+compute:
+  fp16_tflops: 320
+  int8_tops: 640
+  bf16_tflops: 320
+
+interconnect:
+  type: HCCS
+  bandwidth_gbps: 392
+  topology: 全互联 16 卡
+
+system:
+  cpu: 鲲鹏 920 (ARM)
+  cpu_cores: 192
+  ram_gb: 1024
+  nic: 8×200GE QSFP (RoCEv2)
+  psu_w: 3200
+
+software:
+  os: openEuler 22.03
+  cann: 8.0.RC2
+  mindie: 2.0.RC2
+  frameworks:
+    - vLLM-Ascend
+    - MindIE
+    - MindSpore
+
+price_rmb_wan:
+  low: 100
+  high: 120
+  note: 16 卡集群整柜报价区间，含三年原厂维保
+
+use_cases:
+  - 满血 671B 长上下文推理 (DeepSeek-R1)
+  - 高并发 (50-100) 大输入场景
+  - 政企私有化部署
+
+notes:
+  - 3500 G3 与 910B4 是**不同代次**的服务器 SKU——硬件层面 3500 G3
+    对应**昇腾 910_3** 芯片 + 16 卡 HCCS 全互联，定位是满血 671B 推理专用；
+    910B4 是 Atlas 800I A2 8 卡服务器，定位是中小模型主力
+  - 严格说「3500 G3 = 910B4」是指代不准确，本档案作为两个独立 SKU 记录
+
+models:
+  - model: DeepSeek-R1-671B
+    params: 671B (MoE)
+    quantization: Int8
+    framework: vLLM-Ascend
+    status: verified
+    cards: 16
+    config: 'p=2048/o=2048, 并发=10'
+    ttft_ms:
+      '10': 796.57
+      '30': 1586.94
+      '50': 2302.82
+      '100': 2690.73
+    tpot_ms:
+      '10': 41.60
+      '30': 56.42
+      '50': 71.74
+      '100': 94.78
+    e2e_s: null
+    throughput_tps: 462.54
+    vram_gb: null
+  - model: DeepSeek-R1-671B
+    params: 671B (MoE)
+    quantization: Int8
+    framework: vLLM-Ascend
+    status: verified
+    cards: 16
+    config: 'p=4096/o=4096, 并发=10'
+    ttft_ms:
+      '10': 1579.37
+    tpot_ms:
+      '10': 40.40
+    e2e_s: null
+    throughput_tps: 461.48
+    vram_gb: null
+  - model: DeepSeek-R1-671B
+    params: 671B (MoE)
+    quantization: Int8
+    framework: vLLM-Ascend
+    status: verified
+    cards: 16
+    config: 'p=4096/o=1024, 并发=30'
+    ttft_ms:
+      '30': 3211.02
+    tpot_ms:
+      '30': 63.81
+    e2e_s: null
+    throughput_tps: 2080.89
+    vram_gb: null
+  - model: DeepSeek-R1-671B
+    params: 671B (MoE)
+    quantization: Int8
+    framework: vLLM-Ascend
+    status: verified
+    cards: 16
+    config: 'p=1024/o=1024, 并发=100'
+    ttft_ms:
+      '100': 2690.73
+    tpot_ms:
+      '100': 94.78
+    e2e_s: null
+    throughput_tps: 1931.48
+    vram_gb: null

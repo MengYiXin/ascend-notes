@@ -1,0 +1,49 @@
+---
+interface Column { key: string; label: string; align?: 'left' | 'right' | 'center'; mono?: boolean }
+interface Props {
+  columns: Column[];
+  rows: Record<string, any>[];
+  caption?: string;
+}
+const { columns, rows, caption } = Astro.props;
+---
+
+<figure class="my-6 not-prose">
+  {caption && <figcaption class="text-meta text-sm mb-2">{caption}</figcaption>}
+  <div class="overflow-x-auto rounded-md border border-default">
+    <table class="data-table">
+      <thead>
+        <tr>
+          {columns.map(c => (
+            <th
+              class:list={[
+                c.align === 'right' && 'text-right',
+                c.align === 'center' && 'text-center'
+              ]}
+              style={c.mono ? 'font-family: Source Code Pro, Consolas, monospace;' : ''}
+            >
+              {c.label}
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map(row => (
+          <tr>
+            {columns.map(c => (
+              <td
+                class:list={[
+                  c.align === 'right' && 'text-right',
+                  c.align === 'center' && 'text-center',
+                  c.mono && 'num'
+                ]}
+              >
+                {row[c.key] ?? <span class="text-meta">—</span>}
+              </td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</figure>

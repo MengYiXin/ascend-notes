@@ -1,0 +1,33 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import LeftNav from '@components/LeftNav.astro';
+import RightToc from '@components/RightToc.astro';
+import Breadcrumb from '@components/Breadcrumb.astro';
+
+interface Section { title: string; items: { href: string; label: string; badge?: string }[] }
+interface Props {
+  title: string;
+  description?: string;
+  breadcrumb: { label: string; href?: string }[];
+  leftNav: Section[];
+  headings: { depth: number; slug: string; text: string }[];
+}
+const { title, description, breadcrumb, leftNav, headings } = Astro.props;
+const currentPath = Astro.url.pathname;
+---
+
+<BaseLayout title={title} description={description}>
+  <div class="container-shell py-8">
+    <Breadcrumb items={breadcrumb} />
+
+    <div class="flex gap-8">
+      <LeftNav sections={leftNav} currentPath={currentPath} />
+
+      <article class="flex-1 min-w-0 prose-narrow">
+        <slot />
+      </article>
+
+      <RightToc headings={headings} />
+    </div>
+  </div>
+</BaseLayout>

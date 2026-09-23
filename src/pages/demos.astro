@@ -1,0 +1,205 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+const chips = await getCollection('chips');
+const shippingChips = chips.filter(c => c.data.status === 'shipping');
+
+// 收集所有已部署的 (chip, model, quantization) 组合
+const demoSlots = shippingChips.flatMap(c =>
+  c.data.models.map(m => ({
+    chip: c.data.chip_short,
+    chipHref: `/chips/${c.id}`,
+    model: m.model,
+    quantization: m.quantization,
+    cards: m.cards,
+    config: m.config,
+    status: m.status
+  }))
+);
+
+// 任务类型（来自方法论的 4 大评估维度）
+const tasks = [
+  {
+    id: 'qa',
+    name: '知识问答',
+    icon: '💬',
+    desc: '中文领域问答，验证模型的知识储备与中文表达。',
+    prompts: [
+      '请用三句话介绍昇腾 910C 相比 910B 的核心升级点。',
+      '华鲲振宇在国产算力服务器市场的定位是什么？'
+    ]
+  },
+  {
+    id: 'reasoning',
+    name: '逻辑推理',
+    icon: '🧠',
+    desc: '数学 / 代码 / 常识推理，测试 TTFT 与首段响应速度。',
+    prompts: [
+      '9.11 和 9.9 哪个大？请详细说明推理过程。',
+      '一个水池有两个进水管 A、B 和一个排水管 C……'
+    ]
+  },
+  {
+    id: 'code',
+    name: '代码生成',
+    icon: '⌨️',
+    desc: 'Python / SQL / Bash 场景，测试长上下文与格式遵循。',
+    prompts: [
+      '写一个 Python 函数，输入一组 token 时间戳，输出 tokens/s 实时吞吐。',
+      '用 SQL 查每个用户最近 30 天的累计订单金额。'
+    ]
+  },
+  {
+    id: 'longctx',
+    name: '长上下文',
+    icon: '📄',
+    desc: '1M 上下文摘要 / 问答，测试 Prefix Cache 命中与端到端延迟。',
+    prompts: [
+      '对以下 1M token 合同做摘要并列出所有违约条款……',
+      '跨 100 章节长篇小说，归纳主要人物关系图……'
+    ]
+  }
+];
+
+const statusLabels = {
+  verified: '已部署',
+  partial: '部分可用',
+  unsupported: '暂不支持',
+  untested: '未测'
+};
+---
+
+<BaseLayout title="效果展示 · Ascend Notes">
+  <div class="container-shell py-10">
+    <nav aria-label="Breadcrumb" class="text-meta text-sm mb-4 not-prose">
+      <ol class="flex items-center flex-wrap gap-1.5">
+        <li><a href="/" class="hover:text-brand">首页</a></li>
+        <li class="text-ink-400">›</li>
+        <li class="text-ink-700 dark:text-ink-200">效果展示</li>
+      </ol>
+    </nav>
+
+    <header class="mb-8 max-w-3xl">
+      <div class="text-meta text-sm mb-2">性能 · 第二大板块</div>
+      <h1 class="h1-title">装模型的显示效果</h1>
+      <p class="mt-3 text-ink-700 dark:text-ink-200">
+        本页展示各模型在各芯片上的<b>实际输出效果</b>，覆盖四大任务类型：
+        知识问答、逻辑推理、代码生成、长上下文。每个任务给出 prompt + 各芯片上的实际响应。
+      </p>
+      <p class="mt-3 text-meta text-sm">
+        数字告诉你模型有多快，输出告诉你模型有多能。本档案同时记录这两面。
+      </p>
+    </header>
+
+    <!-- 已部署模型 -->
+    <section class="mb-10">
+      <h2 class="h2-title">已部署的 (芯片 × 模型) 组合</h2>
+      <p class="text-meta mb-4">下表罗列所有已部署的组合，下方的演示将围绕这些组合展开。</p>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 not-prose">
+        {demoSlots.map(s => (
+          <a href={`${s.chipHref}#models`} class="card card-hover block">
+            <div class="flex items-center justify-between gap-2 mb-1.5">
+              <span class="badge badge-verified">{statusLabels[s.status]}</span>
+              <span class="text-meta text-xs">{s.cards} 卡</span>
+            </div>
+            <div class="font-semibold text-ink-900 dark:text-ink-100">{s.chip}</div>
+            <div class="text-sm text-ink-700 dark:text-ink-200">{s.model}</div>
+            <div class="text-xs mt-1">
+              <code class="font-mono text-meta">{s.quantization}</code>
+            </div>
+            <div class="text-meta text-xs mt-1.5">{s.config}</div>
+          </a>
+        ))}
+      </div>
+    </section>
+
+    <!-- 四大任务类型 -->
+    <section class="mb-10">
+      <h2 class="h2-title">四大评估任务</h2>
+      <p class="text-meta mb-4">每个任务类型下，相同的 prompt 在不同 (芯片, 模型) 组合上的输出对比。</p>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 not-prose">
+        {tasks.map(t => (
+          <div class="card">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="text-2xl">{t.icon}</span>
+              <h3 class="text-base font-semibold text-ink-900 dark:text-ink-100">{t.name}</h3>
+              <code class="font-mono text-xs text-meta ml-auto">{t.id}</code>
+            </div>
+            <p class="text-sm text-ink-700 dark:text-ink-200 mb-3">{t.desc}</p>
+            <div class="text-meta text-xs uppercase tracking-wider mb-1">示例 Prompt</div>
+            <ul class="space-y-1.5 text-sm">
+              {t.prompts.map(p => (
+                <li class="bg-page-2 rounded px-3 py-1.5 font-mono text-xs">{p}</li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- 输出对比占位 -->
+    <section class="mb-10">
+      <h2 class="h2-title">输出对比</h2>
+      <p class="text-meta mb-4">
+        以下是占位区域，等你在实际硬件上跑出响应后，把内容填进来。每条输出注明：
+        <code class="font-mono text-sm">芯片 / 模型 / 量化 / prompt / 响应文本 / TTFT / 吞吐 / 时间戳</code>。
+      </p>
+
+      {tasks.map(t => (
+        <details class="mb-3 rounded-md border border-default not-prose">
+          <summary class="cursor-pointer p-4 bg-page-2 hover:bg-ink-50 dark:hover:bg-ink-900 font-medium list-none flex items-center gap-2">
+            <span class="text-meta text-xs">▸</span>
+            <span>{t.icon} {t.name}</span>
+            <span class="text-meta ml-auto text-sm">待填</span>
+          </summary>
+          <div class="p-4 space-y-4">
+            <div>
+              <div class="text-meta text-xs uppercase tracking-wider mb-1">Prompt</div>
+              <pre class="bg-page-2 rounded p-3 text-xs font-mono whitespace-pre-wrap">{t.prompts[0]}</pre>
+            </div>
+
+            <div>
+              <div class="text-meta text-xs uppercase tracking-wider mb-2">各 (芯片 × 模型) 组合响应</div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {demoSlots.slice(0, 4).map(s => (
+                  <div class="border border-default rounded-md p-3">
+                    <div class="flex items-center justify-between mb-1.5 text-xs">
+                      <span class="font-medium text-ink-900 dark:text-ink-100">{s.chip}</span>
+                      <span class="text-meta">{s.model} · {s.quantization}</span>
+                    </div>
+                    <pre class="bg-page-2 rounded p-2 text-xs font-mono whitespace-pre-wrap text-meta">（待填：实际响应 + TTFT + tokens）</pre>
+                    <div class="flex gap-3 mt-2 text-xs text-meta">
+                      <span>TTFT: —</span>
+                      <span>TPOT: —</span>
+                      <span>吞吐: —</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </details>
+      ))}
+    </section>
+
+    <!-- 收集说明 -->
+    <section class="not-prose rounded-md border border-default bg-page-2 p-4">
+      <div class="font-semibold text-ink-900 dark:text-ink-100 mb-1">📥 如何补全本页</div>
+      <ol class="text-sm text-ink-700 dark:text-ink-200 list-decimal list-inside space-y-1">
+        <li>选定一个 (芯片, 模型, 量化) 组合，准备好 4 个任务类型的 prompt 各 1-2 个</li>
+        <li>在硬件上跑出响应，记录 TTFT / TPOT / 吞吐 / 时间戳</li>
+        <li>把响应原文复制到对应 <code class="font-mono text-xs">demos.yaml</code>（待建）的对应槽位</li>
+        <li>git push，CI 自动部署，<code class="font-mono text-xs">/demos</code> 页立即更新</li>
+      </ol>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  details > summary { list-style: none; }
+  details > summary::-webkit-details-marker { display: none; }
+  details[open] > summary span:first-child { transform: rotate(90deg); display: inline-block; transition: transform 0.15s; }
+</style>

@@ -1,0 +1,53 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+
+const changes = [
+  {
+    date: '2026-09-23',
+    version: 'v0.1.0',
+    items: [
+      '建站：Ascend Notes 上线',
+      '数据：3500 G3 (DS-R1-671B Int8) 基线数据 7 条',
+      '数据：910C/910B V4-Flash/Pro/GLM5 实测 9 条',
+      '数据：910B4 Qwen3/DS-70B 部署卡数与 token 数据',
+      '数据：Atlas 800I A2 (910B4) 硬件规格',
+      '数据：Atlas 800I A3 560T (910C) 硬件规格',
+      '页面：首页 / 3500 G3 / 910B4 / 910C / 950 / 模型适配总表 / TTFT / 吞吐 / E2E / 资料 / 方法论 / 更新日志',
+      '主题：默认浅色 + 跟随系统 + 可手动切换'
+    ]
+  }
+];
+---
+
+<BaseLayout title="更新日志 · Ascend Notes">
+  <div class="container-shell py-10">
+    <nav aria-label="Breadcrumb" class="text-meta text-sm mb-4 not-prose">
+      <ol class="flex items-center flex-wrap gap-1.5">
+        <li><a href="/" class="hover:text-brand">首页</a></li>
+        <li class="text-ink-400">›</li>
+        <li class="text-ink-700 dark:text-ink-200">更新日志</li>
+      </ol>
+    </nav>
+
+    <header class="mb-8 max-w-3xl">
+      <h1 class="h1-title">更新日志</h1>
+      <p class="mt-3 text-ink-700 dark:text-ink-200">
+        按时间倒序记录数据新增、修正和站点变更。
+      </p>
+    </header>
+
+    <div class="space-y-6 not-prose">
+      {changes.map(c => (
+        <article class="card">
+          <div class="flex items-center gap-3 mb-3">
+            <code class="font-mono text-sm font-semibold">{c.version}</code>
+            <span class="text-meta">{c.date}</span>
+          </div>
+          <ul class="space-y-1 text-sm list-disc list-inside">
+            {c.items.map(item => <li>{item}</li>)}
+          </ul>
+        </article>
+      ))}
+    </div>
+  </div>
+</BaseLayout>

@@ -1,0 +1,19 @@
+---
+interface Source { id: string; title: string; date?: string }
+interface Props {
+  sources: Source[];
+}
+const { sources } = Astro.props;
+---
+
+<aside class="not-prose my-6 text-sm rounded-md border border-default bg-page-2 p-4">
+  <div class="text-meta uppercase tracking-wider text-xs font-medium mb-2">来源 / Source</div>
+  <ol class="space-y-1.5 list-decimal list-inside text-ink-700 dark:text-ink-200">
+    {sources.map(s => (
+      <li>
+        <a href={`/sources#${s.id}`} class="hover:text-brand">{s.title}</a>
+        {s.date && <span class="text-meta"> · {s.date}</span>}
+      </li>
+    ))}
+  </ol>
+</aside>

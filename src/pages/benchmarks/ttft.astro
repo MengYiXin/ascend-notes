@@ -1,0 +1,101 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import DataTable from '@components/DataTable.astro';
+import ChartBlock from '@components/ChartBlock.astro';
+import Footnote from '@components/Footnote.astro';
+import { getCollection } from 'astro:content';
+
+const chips = await getCollection('chips');
+const shippingChips = chips.filter(c => c.data.status === 'shipping');
+
+// 收集所有有 TTFT 的数据点（取首条 concurrency 即可作为代表）
+const points = shippingChips.flatMap(c =>
+  c.data.models.flatMap(m =>
+    Object.entries(m.ttft_ms ?? {})
+      .filter(([_, v]) => v != null)
+      .map(([conc, v]) => ({
+        chip: c.data.chip_short,
+        model: m.model,
+        quantization: m.quantization,
+        config: m.config ?? '',
+        concurrency: Number(conc),
+        ttft_ms: v as number
+      }))
+  )
+);
+
+// 排序：按 TTFT 升序
+points.sort((a, b) => a.ttft_ms - b.ttft_ms);
+
+const chartOption = {
+  tooltip: { trigger: 'axis' },
+  legend: { data: ['TTFT (ms, log)'], top: 0 },
+  grid: { left: 60, right: 20, top: 40, bottom: 80 },
+  xAxis: {
+    type: 'category',
+    data: points.slice(0, 20).map((p, i) => `${p.chip}\n${p.model}`),
+    axisLabel: { rotate: 30, fontSize: 9 }
+  },
+  yAxis: { type: 'log', name: 'TTFT (ms, 对数)' },
+  series: [{
+    type: 'bar',
+    data: points.slice(0, 20).map(p => p.ttft_ms),
+    itemStyle: { color: '#06c' }
+  }]
+};
+---
+
+<BaseLayout title="首 token 延迟 (TTFT) · Ascend Notes">
+  <div class="container-shell py-10">
+    <nav aria-label="Breadcrumb" class="text-meta text-sm mb-4 not-prose">
+      <ol class="flex items-center flex-wrap gap-1.5">
+        <li><a href="/" class="hover:text-brand">首页</a></li>
+        <li class="text-ink-400">›</li>
+        <li class="text-ink-700 dark:text-ink-200">TTFT</li>
+      </ol>
+    </nav>
+
+    <header class="mb-8 max-w-3xl">
+      <div class="text-meta text-sm mb-2">基准 · Benchmarks</div>
+      <h1 class="h1-title">首 token 延迟 (TTFT)</h1>
+      <p class="mt-3 text-ink-700 dark:text-ink-200">
+        <b>TTFT</b> = Time To First Token，又称<b>首包延迟</b>，是衡量"模型收到请求到返回第一个字"的延迟。
+        你之前口语里说的"<b>手套延迟</b>"，就是它——本档案统一写 TTFT。
+      </p>
+    </header>
+
+    <ChartBlock
+      id="ttft-chart"
+      option={chartOption}
+      height="380px"
+      caption="图：所有有效 TTFT 数据点（对数轴，按数值升序）"
+    />
+
+    <h2 class="h2-title">全部 TTFT 数据</h2>
+    <DataTable
+      caption="按 TTFT 升序排列"
+      columns={[
+        { key: 'chip', label: '芯片' },
+        { key: 'model', label: '模型' },
+        { key: 'quantization', label: '量化', mono: true },
+        { key: 'concurrency', label: '并发', align: 'right', mono: true },
+        { key: 'ttft_ms', label: 'TTFT (ms)', align: 'right', mono: true },
+        { key: 'config', label: '配置' }
+      ]}
+      rows={points}
+    />
+
+    <h2 class="h2-title">关键观察</h2>
+    <ul class="text-ink-700 dark:text-ink-200 space-y-2 list-disc list-inside">
+      <li><b>910C 32 卡大 EP</b> 在低并发 (c=1) 下 V4-Flash TTFT 极低（15ms），适合对延迟极敏感的场景。</li>
+      <li><b>910B 单机</b> 跑 V4-Flash 2k/2k，TTFT 约 2.1s，是中小规模延迟敏感场景的性价比之选。</li>
+      <li><b>910C 双机</b> 跑 V4-Pro 1M 上下文时 TTFT 高达 666s（Prefix Cache 不命中），说明长上下文 + Prefix Cache 失效是最痛的痛点。</li>
+    </ul>
+
+    <Footnote sources={[
+      { id: 'src-001', title: '3500G3 性能基线', date: '2026-09-23' },
+      { id: 'src-002', title: '910C/910B 跑 DeepSeek-V4 数据汇总', date: '2026-09-23' },
+      { id: 'src-005', title: 'DeepSeek V4 模型性能基线 (Excel)', date: '2026-09-23' }
+    ]} />
+  </div>
+</BaseLayout>

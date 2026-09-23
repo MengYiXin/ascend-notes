@@ -1,0 +1,147 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import DataTable from '@components/DataTable.astro';
+import StatusBadge from '@components/StatusBadge.astro';
+import { getCollection } from 'astro:content';
+
+const chips = await getCollection('chips');
+const shippingChips = chips.filter(c => c.data.status === 'shipping');
+
+const allModels = shippingChips.flatMap(c =>
+  c.data.models.map(m => ({ ...m, chip: c.data.chip_short, chipHref: `/chips/${c.id}` }))
+);
+
+const modelMap: Record<string, any> = {};
+allModels.forEach(m => {
+  const key = m.model + ' / ' + m.quantization;
+  if (!modelMap[key]) {
+    modelMap[key] = {
+      model: m.model,
+      params: m.params,
+      quantization: m.quantization,
+      adaptations: {} as Record<string, any>
+    };
+  }
+  modelMap[key].adaptations[m.chip] = m;
+});
+
+const matrix = Object.values(modelMap);
+
+const hasVerified = (m: any) => Object.values(m.adaptations).some((a: any) => a.status === 'verified');
+---
+
+<BaseLayout title="模型适配总表 · Ascend Notes">
+  <div class="container-shell py-10">
+    <nav aria-label="Breadcrumb" class="text-meta text-sm mb-4 not-prose">
+      <ol class="flex items-center flex-wrap gap-1.5">
+        <li><a href="/" class="hover:text-brand">首页</a></li>
+        <li class="text-ink-400">›</li>
+        <li class="text-ink-700 dark:text-ink-200">模型适配总表</li>
+      </ol>
+    </nav>
+
+    <header class="mb-8 max-w-3xl">
+      <h1 class="h1-title">模型适配总表</h1>
+      <p class="mt-3 text-ink-700 dark:text-ink-200">
+        覆盖 3500 G3 / 910B4 / 910C 三款芯片的模型适配情况。
+        每条记录注明硬件、CANN/MindIE 版本、prompt/output 长度和来源笔记。
+      </p>
+    </header>
+
+    <!-- 适配矩阵 -->
+    <div class="overflow-x-auto rounded-md border border-default not-prose">
+      <table class="data-table" id="matrix-table">
+        <thead>
+          <tr>
+            <th>模型</th>
+            <th>参数量</th>
+            <th>量化</th>
+            <th class="text-center">3500 G3</th>
+            <th class="text-center">910B4</th>
+            <th class="text-center">910C</th>
+          </tr>
+        </thead>
+        <tbody>
+          {matrix.map((m: any) => (
+            <tr data-verified={hasVerified(m)}>
+              <td><b>{m.model}</b></td>
+              <td class="text-meta">{m.params}</td>
+              <td><code class="font-mono text-sm">{m.quantization}</code></td>
+              {['3500 G3', '910B4', '910C'].map(chip => {
+                const a = m.adaptations[chip];
+                if (!a) return <td class="text-center text-meta">—</td>;
+                return (
+                  <td class="text-center">
+                    <StatusBadge status={a.status} />
+                    <div class="text-[11px] text-meta mt-1">
+                      {a.cards}卡 · {a.throughput_tps ? `${a.throughput_tps}tps` : a.vram_gb ? `${a.vram_gb}GB` : '—'}
+                    </div>
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-3 text-meta text-sm not-prose">
+      <span class="badge badge-verified mr-2">已验证</span>
+      <span class="badge badge-partial mr-2">部分验证</span>
+      <span class="badge badge-unsupported mr-2">不支持</span>
+      <span>— 未覆盖</span>
+    </div>
+
+    <!-- 详细数据 -->
+    <h2 class="h2-title">详细性能数据</h2>
+    <p class="text-meta mb-4">按模型分组的实测数据。点击展开。</p>
+
+    <div class="not-prose space-y-3">
+      {matrix.map((m: any) => (
+        <details class="rounded-md border border-default" open>
+          <summary class="cursor-pointer p-4 bg-page-2 hover:bg-ink-50 dark:hover:bg-ink-900 font-medium list-none flex items-center gap-2">
+            <span class="text-meta text-xs">▸</span>
+            <span>{m.model} · <code class="font-mono text-sm">{m.quantization}</code></span>
+            <span class="text-meta ml-auto text-sm">{Object.values(m.adaptations).length} 个适配</span>
+          </summary>
+          <div class="p-4">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>芯片</th>
+                  <th>卡数</th>
+                  <th>框架</th>
+                  <th>状态</th>
+                  <th>配置</th>
+                  <th>TTFT</th>
+                  <th>吞吐</th>
+                  <th>E2E</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.values(m.adaptations).map((a: any) => (
+                  <tr>
+                    <td><a href={a.chipHref} class="text-brand">{a.chip}</a></td>
+                    <td class="num">{a.cards}</td>
+                    <td>{a.framework}</td>
+                    <td><StatusBadge status={a.status} /></td>
+                    <td class="text-meta">{a.config}</td>
+                    <td class="num">{Object.values(a.ttft_ms ?? {}).map((v: any) => v != null ? `${v}ms` : '—').join(', ') || '—'}</td>
+                    <td class="num">{a.throughput_tps ? `${a.throughput_tps}` : '—'}</td>
+                    <td class="num">{a.e2e_s ? `${a.e2e_s}s` : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </details>
+      ))}
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  details > summary { list-style: none; }
+  details > summary::-webkit-details-marker { display: none; }
+  details[open] > summary span:first-child { transform: rotate(90deg); display: inline-block; transition: transform 0.15s; }
+</style>

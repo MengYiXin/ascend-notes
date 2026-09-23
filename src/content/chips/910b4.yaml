@@ -1,0 +1,171 @@
+chip: Atlas 800I A2 (昇腾 910B4)
+chip_short: 910B4
+aliases:
+  - 910B4
+  - 800I A2
+  - 华为 Atlas 800I A2
+  - 强 A800I A2
+category: mainstream
+status: shipping
+vendor: 华为 / 华鲲振宇
+release: '2024'
+
+summary: >-
+  8 卡主力推理服务器，单卡 64GB HBM2e + HCCS 392GB/s 全互联，
+  覆盖 Qwen3 全系、DeepSeek-70B、V4 Flash/Pro 等中小模型。
+
+memory:
+  per_card_gb: 64
+  type: HBM2e
+
+compute:
+  fp16_tflops: 376
+  int8_tops: 752
+  bf16_tflops: 376
+
+interconnect:
+  type: HCCS
+  bandwidth_gbps: 392
+  topology: 8 卡全互联
+
+system:
+  cpu: 鲲鹏 920 (ARM) ×4
+  cpu_cores: 192
+  ram_gb: 512
+  nic: 8×200GE QSFP (RoCEv2)
+  psu_w: 3200
+
+software:
+  os: openEuler 22.03
+  cann: 8.0.RC2
+  mindie: 2.0.RC2
+  frameworks:
+    - vLLM-Ascend
+    - MindIE
+    - MindSpore
+
+price_rmb_wan:
+  low: 95
+  high: 117.6
+  note: 8 卡整机，华为直采 95-110 万；华鲲振宇 AT800 A2 同配 ~117.6 万
+
+use_cases:
+  - Qwen3-32B / 70B / 235B-A22B 主力推理
+  - DeepSeek-70B 推理
+  - DeepSeek-V4-Flash / V4-Pro 中等规模部署
+  - 4+4 混合部署（VL-32B + Qwen3.6-278 等组合场景）
+  - 政务/企业私有化知识库
+
+notes:
+  - '800I A2 = 910B4 是华为内部常用的等价说法，本档案统一以 910B4 为代号'
+  - 单卡可装 Qwen3-32B (2 卡) / DeepSeek-70B (4 卡)；完整 8 卡可推 Qwen3-235B-A22B FP16
+
+models:
+  - model: Qwen3-235B-A22B
+    params: 235B (MoE)
+    quantization: FP16
+    framework: MindIE
+    status: verified
+    cards: 8
+    config: '1 台 910B4 整机 / FP16'
+    ttft_ms: {}
+    tpot_ms: {}
+    e2e_s: null
+    throughput_tps: null
+    vram_gb: null
+  - model: Qwen3-30B-A3B
+    params: 30B (MoE)
+    quantization: W8A8
+    framework: MindIE
+    status: verified
+    cards: 2
+    config: '1 台 910B4 上用 2 卡'
+    ttft_ms: {}
+    tpot_ms: {}
+    e2e_s: 4
+    throughput_tps: 340
+    vram_gb: null
+  - model: Qwen3-32B
+    params: 32B
+    quantization: W8A8
+    framework: MindIE
+    status: verified
+    cards: 2
+    config: '1 台 910B4 上用 2 卡, p=2k/o=2k, 并发=25'
+    ttft_ms: {}
+    tpot_ms: {}
+    e2e_s: 4
+    throughput_tps: 340
+    vram_gb: null
+  - model: DeepSeek-70B
+    params: 70B
+    quantization: W4A16
+    framework: MindIE
+    status: verified
+    cards: 4
+    config: '1 台 910B4 上用 4 卡'
+    ttft_ms: {}
+    tpot_ms: {}
+    e2e_s: null
+    throughput_tps: null
+    vram_gb: null
+  - model: DeepSeek-V4-Flash
+    params: 激活 ~4B
+    quantization: W8A8
+    framework: vLLM-Ascend
+    status: verified
+    cards: 8
+    config: '单机 910B / p=2k/o=2k, 并发=16'
+    ttft_ms: {}
+    tpot_ms: {}
+    e2e_s: 2.1
+    throughput_tps: 775.74
+    vram_gb: null
+  - model: DeepSeek-V4-Pro
+    params: 激活 ~22B
+    quantization: W4A8
+    framework: vLLM-Ascend
+    status: verified
+    cards: 4
+    config: '四卡 910B / p=4k/o=1k, 并发=16'
+    ttft_ms: {}
+    tpot_ms: {}
+    e2e_s: 6.2
+    throughput_tps: 963.4
+    vram_gb: null
+  - model: DeepSeek-V4-Pro
+    params: 激活 ~22B
+    quantization: W4A8
+    framework: vLLM-Ascend
+    status: verified
+    cards: 4
+    config: '四卡 910B / p=2k/o=2k, 并发=16'
+    ttft_ms: {}
+    tpot_ms: {}
+    e2e_s: 5.4
+    throughput_tps: 453.96
+    vram_gb: null
+  - model: Qwen3.6-278
+    params: 278B (MoE)
+    quantization: INT4
+    framework: vLLM-Ascend
+    status: verified
+    cards: 4
+    config: '四卡 + KV Cache, 4×64GB 集群可承载'
+    ttft_ms: {}
+    tpot_ms: {}
+    e2e_s: null
+    throughput_tps: null
+    vram_gb: 140
+  - model: VL-32B
+    params: 32B
+    quantization: INT8
+    framework: vLLM-Ascend
+    status: verified
+    cards: 4
+    config: '四卡 910B / 与 Qwen3.6-278 4+4 混合部署'
+    ttft_ms: {}
+    tpot_ms: {}
+    e2e_s: null
+    throughput_tps: null
+    vram_gb: 36

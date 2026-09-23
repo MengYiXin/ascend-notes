@@ -1,0 +1,56 @@
+# 资料与来源清单（每条数据 / 每张表的脚注都引用这里的 id）
+sources:
+  - id: src-001
+    title: 3500G3 性能基线（DeepSeek-R1-671B Int8）
+    type: internal_photo
+    date: 2026-09-23
+    location: 桌面/昇腾相关/3500G3 性能基线.jpg
+    notes: 华鲲振宇官方提供的基线表，16 卡集群测试
+  - id: src-002
+    title: 910C/910B 跑 DeepSeek-V4 数据汇总
+    type: internal_doc
+    date: 2026-09-23
+    location: 桌面/昇腾相关/910C910B数据-deepseekV4.docx
+    notes: 单/双机 910C、单机/四卡 910B 实测记录
+  - id: src-003
+    title: 请教蒲谋：Qwen3 / DeepSeek 在 910B4 上的部署
+    type: internal_doc
+    date: 2026-09-23
+    location: 桌面/昇腾相关/请教蒲谋.docx
+    notes: 卡数、token 数据来源
+  - id: src-004
+    title: 五粮液 AI 算力硬件报价方案
+    type: internal_doc
+    date: 2026-08
+    location: 桌面/昇腾相关/五粮液-AI算力硬件报价方案.docx
+    notes: Atlas 800I A2 硬件规格、CPU/内存/网络/电源等
+  - id: src-005
+    title: DeepSeek V4 模型性能基线 (Excel)
+    type: internal_xlsx
+    date: 2026-09-23
+    location: 桌面/昇腾相关/DeepSeek V4版本基线(1).xlsx
+    notes: V4 Flash 36 行 + V4 Pro 34 行多机多卡基线
+  - id: src-006
+    title: 华鲲昇腾产品介绍 0828 (PPT)
+    type: internal_ppt
+    date: 2026-08
+    location: 桌面/昇腾相关/华鲲昇腾产品介绍0828——蒙沂鑫-V4(1).pptx
+    notes: 50 页公司叙事，含 AT3500 G3 / AT800 A2 / HC6000 产品定位
+  - id: src-007
+    title: 910C 服务器规格（投标报价）
+    type: internal_xlsx
+    date: 2026-09
+    location: 桌面/910C.xlsx
+    notes: HuaKun AT958 B3 (560T / 626T) 详细规格
+  - id: src-008
+    title: vLLM Ascend DeepSeek-V4-Pro Tutorial
+    type: external_url
+    date: 2026-09
+    url: https://docs.vllm.ai/projects/ascend/en/v0.18.0/tutorials/models/DeepSeek-V4-Pro.html
+    notes: V4-Pro-W4A8-MTP 部署、硬件需求、PD 分离
+  - id: src-009
+    title: vLLM Ascend DeepSeek-V4-Flash Tutorial
+    type: external_url
+    date: 2026-09
+    url: https://docs.vllm.ai/projects/ascend/en/v0.18.0/tutorials/models/DeepSeek-V4-Flash.html
+    notes: V4-Flash-W8A8-MTP 部署与基线

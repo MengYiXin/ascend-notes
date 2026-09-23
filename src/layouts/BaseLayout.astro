@@ -1,0 +1,72 @@
+---
+import '@/styles/global.css';
+import TopNav from '@components/TopNav.astro';
+
+interface Props {
+  title?: string;
+  description?: string;
+  showTopNav?: boolean;
+}
+const {
+  title = 'Ascend Notes · 昇腾实测档案',
+  description = '昇腾 3500 G3 / 910B4 / 910C / 950 模型适配、TTFT 与吞吐实测数据',
+  showTopNav = true
+} = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="alternate icon" href="/favicon.svg" />
+    <title>{title}</title>
+  </head>
+  <body>
+    {showTopNav && <TopNav />}
+
+    <main>
+      <slot />
+    </main>
+
+    <footer class="border-t border-default mt-20">
+      <div class="container-shell py-8 text-meta text-sm flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div>
+          © {new Date().getFullYear()} Ascend Notes · 昇腾实测档案 ·
+          数据可追溯 · 不构成采购建议
+        </div>
+        <div class="flex gap-5">
+          <a href="/methodology" class="hover:text-brand">方法论</a>
+          <a href="/sources" class="hover:text-brand">资料</a>
+          <a href="/changelog" class="hover:text-brand">更新日志</a>
+          <a href="https://mengyx.com.cn" class="hover:text-brand">主站</a>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      import { initTheme } from '@/scripts/theme-toggle';
+      initTheme();
+
+      // 主题切换按钮
+      const btn = document.getElementById('theme-toggle');
+      btn?.addEventListener('click', () => {
+        const cur = localStorage.getItem('ascend-notes-theme') || 'system';
+        const next = cur === 'light' ? 'dark' : cur === 'dark' ? 'system' : 'light';
+        localStorage.setItem('ascend-notes-theme', next);
+        location.reload();
+      });
+
+      // 初始主题避免闪烁
+      (function () {
+        const saved = localStorage.getItem('ascend-notes-theme') || 'system';
+        const isDark = saved === 'dark' ||
+          (saved === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        if (isDark) document.documentElement.classList.add('dark');
+      })();
+    </script>
+  </body>
+</html>

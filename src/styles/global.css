@@ -1,0 +1,147 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background-color: #fff;
+    --second-background-color: #f7f7f7;
+    --primary-color: #06c;
+    --first-text-color: #484853;
+    --second-text-color: #4c4c57;
+    --third-text-color: #808091;
+    --border-color: #b3b3b3;
+    --selection-color: #0075eb;
+    --link-color: #484853;
+    --copyright-info-color: #c03;
+  }
+
+  html.dark {
+    --background-color: #0f1115;
+    --second-background-color: #161922;
+    --primary-color: #4d9bff;
+    --first-text-color: #d2d2d7;
+    --second-text-color: #cbcbd1;
+    --third-text-color: #9595a2;
+    --border-color: #3a3d47;
+    --selection-color: #4d9bff;
+    --link-color: #c5c5cc;
+    --copyright-info-color: #ff6b81;
+  }
+
+  html {
+    background-color: var(--background-color);
+    color: var(--first-text-color);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: var(--background-color);
+    color: var(--first-text-color);
+    font-family: 'Optima-Regular', 'Optima', -apple-system, system-ui,
+      'Segoe UI', Roboto, 'PingFang SC', 'Hiragino Sans GB',
+      'Microsoft YaHei', sans-serif;
+    font-size: 16px;
+    line-height: 1.65;
+    transition: background-color 0.15s, color 0.15s;
+  }
+
+  ::selection {
+    background-color: var(--selection-color);
+    color: #fff;
+  }
+
+  a {
+    color: var(--primary-color);
+    text-decoration: none;
+  }
+  a:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  /* 简化版滚动条 */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: var(--second-background-color); }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: var(--third-text-color); }
+
+  /* 锚点偏移，避开 sticky header */
+  .anchor-offset {
+    scroll-margin-top: 5rem;
+  }
+}
+
+@layer components {
+  .container-shell {
+    @apply mx-auto w-full max-w-shell px-6;
+  }
+  .container-prose {
+    @apply mx-auto w-full max-w-prose;
+  }
+
+  .card {
+    @apply rounded-md border border-ink-100 dark:border-ink-900
+      bg-[var(--second-background-color)]
+      p-5 transition-colors;
+  }
+  .card-hover {
+    @apply hover:border-brand dark:hover:border-brand;
+  }
+
+  .h1-title { @apply text-3xl font-semibold tracking-tight text-ink-900 dark:text-ink-100; }
+  .h2-title { @apply text-2xl font-semibold tracking-tight text-ink-900 dark:text-ink-100 mt-10 mb-4; }
+  .h3-title { @apply text-xl font-semibold text-ink-900 dark:text-ink-100 mt-6 mb-3; }
+  .h4-title { @apply text-base font-semibold text-ink-900 dark:text-ink-100 mt-4 mb-2; }
+
+  .text-meta {
+    @apply text-sm text-ink-500 dark:text-ink-400;
+  }
+
+  .badge {
+    @apply inline-flex items-center rounded px-2 py-0.5 text-xs font-medium;
+  }
+  .badge-verified { @apply bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300; }
+  .badge-partial  { @apply bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300; }
+  .badge-untested { @apply bg-ink-100 text-ink-500 dark:bg-ink-900 dark:text-ink-400; }
+  .badge-unsupported { @apply bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300; }
+
+  .nav-link {
+    @apply text-ink-700 dark:text-ink-200 hover:text-brand dark:hover:text-brand-dark transition-colors;
+  }
+
+  .data-table {
+    @apply w-full text-sm border-collapse;
+  }
+  .data-table thead {
+    @apply bg-[var(--second-background-color)] border-b border-ink-100 dark:border-ink-900;
+  }
+  .data-table th {
+    @apply px-3 py-2 text-left font-medium text-ink-700 dark:text-ink-200 whitespace-nowrap;
+  }
+  .data-table td {
+    @apply px-3 py-2 border-b border-ink-100 dark:border-ink-900 text-ink-800 dark:text-ink-200;
+  }
+  .data-table tbody tr:hover {
+    @apply bg-[var(--second-background-color)];
+  }
+  .data-table .num {
+    @apply font-mono tabular-nums text-right;
+  }
+}
+
+@layer utilities {
+  .prose-narrow {
+    max-width: 72ch;
+  }
+  .scrollbar-thin::-webkit-scrollbar { width: 4px; }
+  .text-brand { color: var(--primary-color); }
+  .bg-page { background-color: var(--background-color); }
+  .bg-page-2 { background-color: var(--second-background-color); }
+  .text-link { color: var(--link-color); }
+  .border-default { border-color: var(--border-color); }
+}

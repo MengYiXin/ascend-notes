@@ -1,0 +1,109 @@
+---
+import { getEntry } from 'astro:content';
+import ChipLayout from '@layouts/ChipLayout.astro';
+import Footnote from '@components/Footnote.astro';
+
+const entry = await getEntry('chips', '950');
+if (!entry) throw new Error('950 not found');
+const data = entry.data;
+
+const headings = [
+  { depth: 2, slug: 'overview', text: '1. 概述' },
+  { depth: 2, slug: 'what-is', text: '2. 950 是什么' },
+  { depth: 2, slug: 'expect', text: '3. 预期规格' },
+  { depth: 2, slug: 'sources', text: '4. 信源' }
+];
+
+const leftNav = [
+  {
+    title: '芯片 / 服务器',
+    items: [
+      { href: '/chips/3500-g3', label: '3500 G3' },
+      { href: '/chips/910b4', label: '910B4' },
+      { href: '/chips/910c', label: '910C' },
+      { href: '/chips/950', label: '950 (路线图)', badge: '本页' }
+    ]
+  },
+  {
+    title: '模型与基准',
+    items: [
+      { href: '/models', label: '模型适配总表' },
+      { href: '/benchmarks/ttft', label: 'TTFT' },
+      { href: '/benchmarks/throughput', label: '吞吐' },
+      { href: '/benchmarks/e2e', label: 'E2E' }
+    ]
+  }
+];
+---
+
+<ChipLayout
+  title={`${data.chip_short} · Ascend Notes`}
+  description={`${data.chip} 路线图`}
+  breadcrumb={[
+    { label: '首页', href: '/' },
+    { label: '芯片', href: '/' },
+    { label: data.chip_short }
+  ]}
+  leftNav={leftNav}
+  headings={headings}
+>
+  <header class="mb-8">
+    <div class="text-meta text-sm mb-2">路线图 · 暂无实测</div>
+    <h1 class="h1-title">昇腾 {data.chip_short}</h1>
+    <p class="mt-3 text-ink-700 dark:text-ink-200">{data.summary}</p>
+  </header>
+
+  <div class="not-prose rounded-md border border-default bg-page-2 p-4 mb-8">
+    <div class="font-semibold text-ink-900 dark:text-ink-100">⚠️ 数据缺失声明</div>
+    <p class="text-sm text-ink-700 dark:text-ink-200 mt-1">
+      昇腾 950 暂无第三方实测数据。请勿引用本页任何数字作为采购决策依据。
+      本页作为占位，会在 950 商用后按 3500 G3 / 910B4 / 910C 的同等结构补齐。
+    </p>
+  </div>
+
+  <h2 id="overview" class="anchor-offset h2-title">1. 概述</h2>
+  <p class="text-ink-700 dark:text-ink-200">
+    昇腾 950 是华为规划的下一代昇腾芯片，定位为 910C 的下一代旗舰。
+    预计将在算力、显存带宽、HBM 容量、互联带宽上全面升级，
+    重点面向千亿/万亿参数 MoE 推理、1M+ 超长上下文、多模态融合推理等场景。
+  </p>
+
+  <h2 id="what-is" class="anchor-offset h2-title">2. 950 是什么</h2>
+  <ul class="text-ink-700 dark:text-ink-200 space-y-1.5">
+    <li><b>代号</b>：Ascend 950（昇腾 950）</li>
+    <li><b>厂商</b>：华为</li>
+    <li><b>发布预期</b>：{data.release}</li>
+    <li><b>定位</b>：910C 的下一代旗舰</li>
+  </ul>
+
+  <h2 id="expect" class="anchor-offset h2-title">3. 预期规格（待官方披露）</h2>
+  <div class="overflow-x-auto rounded-md border border-default not-prose">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>项</th>
+          <th>当前 910C</th>
+          <th>预期 950</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>单卡显存</td><td>128GB HBM3</td><td>更大（具体待披露）</td></tr>
+        <tr><td>单卡 FP16 算力</td><td>≥560 TFLOPS</td><td>显著提升</td></tr>
+        <tr><td>显存带宽</td><td>≥3.2 TB/s</td><td>预计 ≥4-5 TB/s (HBM3e)</td></tr>
+        <tr><td>NPU 互联</td><td>≥780 GB/s</td><td>预计 ≥1 TB/s</td></tr>
+        <tr><td>典型场景</td><td>128K~1M 上下文</td><td>1M+ 常态化</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="text-meta text-sm mt-2">
+    以上为基于行业趋势的预期，非官方数据。
+  </p>
+
+  <h2 id="sources" class="anchor-offset h2-title">4. 信源</h2>
+  <Footnote sources={[
+    { id: 'src-006', title: '华鲲昇腾产品介绍 0828 (PPT)', date: '2026-08' }
+  ]} />
+  <p class="text-meta text-sm">
+    一旦 950 商用，本页会按 3500 G3 / 910B4 / 910C 的同等结构补齐。
+  </p>
+</ChipLayout>

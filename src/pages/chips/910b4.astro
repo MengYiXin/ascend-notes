@@ -1,0 +1,225 @@
+---
+import { getEntry } from 'astro:content';
+import ChipLayout from '@layouts/ChipLayout.astro';
+import DataTable from '@components/DataTable.astro';
+import ChartBlock from '@components/ChartBlock.astro';
+import StatusBadge from '@components/StatusBadge.astro';
+import Footnote from '@components/Footnote.astro';
+
+const entry = await getEntry('chips', '910b4');
+if (!entry) throw new Error('910b4 not found');
+const data = entry.data;
+
+const headings = [
+  { depth: 2, slug: 'overview', text: '1. 概述' },
+  { depth: 2, slug: 'specs', text: '2. 硬件规格' },
+  { depth: 2, slug: 'models', text: '3. 适配模型' },
+  { depth: 2, slug: 'perf', text: '4. 实测性能' },
+  { depth: 3, slug: 'perf-qwen', text: '4.1 Qwen3 推理 (2k/2k)' },
+  { depth: 3, slug: 'perf-v4', text: '4.2 V4 Flash / Pro' },
+  { depth: 2, slug: 'cases', text: '5. 部署案例' },
+  { depth: 2, slug: 'sources', text: '6. 数据来源' }
+];
+
+const leftNav = [
+  {
+    title: '芯片 / 服务器',
+    items: [
+      { href: '/chips/3500-g3', label: '3500 G3' },
+      { href: '/chips/910b4', label: '910B4', badge: '本页' },
+      { href: '/chips/910c', label: '910C' },
+      { href: '/chips/950', label: '950 (路线图)' }
+    ]
+  },
+  {
+    title: '模型与基准',
+    items: [
+      { href: '/models', label: '模型适配总表' },
+      { href: '/benchmarks/ttft', label: 'TTFT' },
+      { href: '/benchmarks/throughput', label: '吞吐' },
+      { href: '/benchmarks/e2e', label: 'E2E' }
+    ]
+  }
+];
+
+// V4 实测数据
+const v4Models = data.models.filter(m => m.model.includes('V4'));
+const v4Rows = v4Models.map(m => ({
+  model: m.model,
+  quantization: m.quantization,
+  cards: m.cards,
+  config: m.config,
+  ttft: Object.values(m.ttft_ms ?? {}).map(v => v != null ? `${v}ms` : '—').join(', '),
+  tps: m.throughput_tps ? `${m.throughput_tps} tps` : '—',
+  e2e: m.e2e_s ? `${m.e2e_s}s` : '—'
+}));
+
+// 910B vs 910C 同模型对比（V4-Flash W8A8）
+const compareChartOption = {
+  tooltip: { trigger: 'axis' },
+  legend: { data: ['910B 单机', '910C 单机'], top: 0 },
+  grid: { left: 60, right: 20, top: 40, bottom: 60 },
+  xAxis: {
+    type: 'category',
+    data: ['2k/2k 并发 16', '8k/1k 并发 64'],
+    name: '测试条件'
+  },
+  yAxis: { type: 'value', name: '吞吐 (tps)' },
+  series: [
+    { name: '910B 单机', type: 'bar', data: [775.74, null], itemStyle: { color: '#4c4c57' } },
+    { name: '910C 单机', type: 'bar', data: [null, 6694.92], itemStyle: { color: '#06c' } }
+  ]
+};
+---
+
+<ChipLayout
+  title={`${data.chip_short} · Ascend Notes`}
+  description={`${data.chip} 模型适配、TTFT 与吞吐实测`}
+  breadcrumb={[
+    { label: '首页', href: '/' },
+    { label: '芯片', href: '/' },
+    { label: data.chip_short }
+  ]}
+  leftNav={leftNav}
+  headings={headings}
+>
+  <header class="mb-8">
+    <div class="text-meta text-sm mb-2">主流 · 中小模型主力</div>
+    <h1 class="h1-title">昇腾 {data.chip_short} / {data.aliases[0]}</h1>
+    <p class="mt-3 text-ink-700 dark:text-ink-200">{data.summary}</p>
+  </header>
+
+  <h2 id="overview" class="anchor-offset h2-title">1. 概述</h2>
+  <ul class="text-ink-700 dark:text-ink-200 space-y-1.5">
+    <li><b>定位</b>：8 卡主力推理服务器，覆盖 Qwen3 全系、DeepSeek-70B、V4 Flash/Pro</li>
+    <li><b>别名</b>：{data.aliases.join(' / ')}（800I A2 = 910B4 是华为内部等价说法）</li>
+    <li><b>厂商</b>：{data.vendor}</li>
+    <li><b>内存</b>：单卡 {data.memory.per_card_gb}GB {data.memory.type}</li>
+    <li><b>算力</b>：FP16 {data.compute.fp16_tflops} TFLOPS · INT8 {data.compute.int8_tops} TOPS（单卡）</li>
+    <li><b>互联</b>：{data.interconnect.type} {data.interconnect.bandwidth_gbps} GB/s {data.interconnect.topology}</li>
+    <li><b>软件栈</b>：{data.software.os} · CANN {data.software.cann} · MindIE {data.software.mindie} · {data.software.frameworks.join(' / ')}</li>
+    <li><b>参考价</b>：¥{data.price_rmb_wan?.low}-{data.price_rmb_wan?.high} 万（{data.price_rmb_wan?.note}）</li>
+  </ul>
+
+  <h2 id="specs" class="anchor-offset h2-title">2. 硬件规格</h2>
+  <DataTable
+    caption="Atlas 800I A2 (8 卡 910B4) 整机规格"
+    columns={[
+      { key: 'k', label: '项' },
+      { key: 'v', label: '规格' }
+    ]}
+    rows={[
+      { k: '形态', v: '4U 机架式，8 卡全互联' },
+      { k: 'AI 加速卡', v: `8 颗 昇腾 910B4 (${data.memory.type}, ${data.memory.per_card_gb}GB/卡)` },
+      { k: '总显存', v: '512 GB (8×64GB)' },
+      { k: 'FP16 算力（单卡）', v: `${data.compute.fp16_tflops} TFLOPS` },
+      { k: 'FP16 算力（整机）', v: `${(data.compute.fp16_tflops ?? 0) * 8} TFLOPS` },
+      { k: 'INT8 算力（单卡）', v: `${data.compute.int8_tops} TOPS` },
+      { k: '显存带宽', v: '1.6 TB/s/卡' },
+      { k: '互联', v: `${data.interconnect.type} ${data.interconnect.bandwidth_gbps} GB/s ${data.interconnect.topology}` },
+      { k: 'CPU', v: data.system.cpu },
+      { k: 'CPU 核数', v: `${data.system.cpu_cores} 核 (4 颗 × 48 核)` },
+      { k: '内存', v: '512GB DDR4 ECC (16×32GB, 可扩 1024GB)' },
+      { k: '系统盘', v: '2×960GB NVMe SSD (RAID 1)' },
+      { k: '数据盘', v: '4×3.84TB NVMe SSD' },
+      { k: '网络', v: '8×200GE QSFP (RoCEv2, NPU 直出)' },
+      { k: '电源', v: '4×2600W 冗余 (2+2)，整机 ~3200W 满载' },
+      { k: '操作系统', v: data.software.os },
+      { k: '加速库', v: `${data.software.cann} · ${data.software.mindie}` },
+      { k: '推理框架', v: data.software.frameworks.join(' / ') }
+    ]}
+  />
+
+  <h2 id="models" class="anchor-offset h2-title">3. 适配模型</h2>
+  <div class="overflow-x-auto rounded-md border border-default not-prose">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>模型</th>
+          <th>参数量</th>
+          <th>量化</th>
+          <th>框架</th>
+          <th>状态</th>
+          <th>卡数</th>
+          <th>备注</th>
+        </tr>
+      </thead>
+      <tbody>
+        {data.models.map(m => (
+          <tr>
+            <td>{m.model}</td>
+            <td class="text-meta">{m.params}</td>
+            <td><code class="font-mono text-sm">{m.quantization}</code></td>
+            <td>{m.framework}</td>
+            <td><StatusBadge status={m.status} /></td>
+            <td class="text-right num">{m.cards}</td>
+            <td class="text-meta">{m.config}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+
+  <h2 id="perf" class="anchor-offset h2-title">4. 实测性能</h2>
+
+  <h3 id="perf-qwen" class="anchor-offset h3-title">4.1 Qwen3 推理 (2k/2k, 25 并发)</h3>
+  <p class="text-ink-700 dark:text-ink-200">
+    根据请教蒲谋的部署笔记 [src-003]：
+  </p>
+  <DataTable
+    caption="910B4 跑 Qwen3 系列（p=2k, o=2k, 并发=25）"
+    columns={[
+      { key: 'k', label: '项' },
+      { key: 'v', label: '值' }
+    ]}
+    rows={[
+      { k: 'Qwen3-32B / Qwen3-30B-A3B', v: '2 卡，TPS 340，首包 4s' },
+      { k: 'Qwen3-32B 备注', v: '可与 30B-A3B 互参' },
+      { k: 'DeepSeek-70B', v: '4 卡（参考上图）' },
+      { k: 'Qwen3-235B-A22B', v: '8 卡全用，FP16 勉强可放' }
+    ]}
+  />
+
+  <h3 id="perf-v4" class="anchor-offset h3-title">4.2 V4 Flash / Pro 实测</h3>
+  <p class="text-meta mb-4">
+    数据来自 [src-002] 与 [src-005]。注意 910B 单机跑 V4-Pro 需 4 卡。
+  </p>
+
+  <DataTable
+    caption="910B4 跑 DeepSeek V4 实测"
+    columns={[
+      { key: 'model', label: '模型' },
+      { key: 'quantization', label: '量化' },
+      { key: 'cards', label: '卡数', align: 'right', mono: true },
+      { key: 'config', label: '配置' },
+      { key: 'ttft', label: 'TTFT' },
+      { key: 'tps', label: '吞吐', align: 'right', mono: true },
+      { key: 'e2e', label: 'E2E', align: 'right', mono: true }
+    ]}
+    rows={v4Rows}
+  />
+
+  <h3 class="h3-title">910B vs 910C 同模型对比</h3>
+  <p class="text-meta mb-4">
+    V4-Flash W8A8 在 910B 单机（8 卡）与 910C 单机（8 卡）上的吞吐对比。
+  </p>
+  <ChartBlock
+    id="compare-chart"
+    option={compareChartOption}
+    height="280px"
+    caption="图：910B vs 910C 同模型吞吐对比"
+  />
+
+  <h2 id="cases" class="anchor-offset h2-title">5. 部署案例</h2>
+  <ul class="text-ink-700 dark:text-ink-200 space-y-2">
+    {data.use_cases.map(uc => <li>· {uc}</li>)}
+  </ul>
+
+  <h2 id="sources" class="anchor-offset h2-title">6. 数据来源</h2>
+  <Footnote sources={[
+    { id: 'src-002', title: '910C/910B 跑 DeepSeek-V4 数据汇总', date: '2026-09-23' },
+    { id: 'src-003', title: '请教蒲谋：Qwen3 / DeepSeek 在 910B4 上的部署', date: '2026-09-23' },
+    { id: 'src-004', title: '五粮液 AI 算力硬件报价方案', date: '2026-08' },
+    { id: 'src-008', title: 'vLLM Ascend DeepSeek-V4-Pro Tutorial' }
+  ]} />
+</ChipLayout>

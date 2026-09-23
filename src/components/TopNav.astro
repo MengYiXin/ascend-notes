@@ -1,0 +1,78 @@
+---
+const navItems = [
+  { href: '/', label: '首页' },
+  { href: '/chips/3500-g3', label: '3500 G3' },
+  { href: '/chips/910b4', label: '910B4' },
+  { href: '/chips/910c', label: '910C' },
+  { href: '/chips/950', label: '950' },
+  { href: '/models', label: '模型' },
+  { href: '/benchmarks/ttft', label: 'TTFT' },
+  { href: '/benchmarks/throughput', label: '吞吐' },
+  { href: '/demos', label: '效果' },
+  { href: '/sources', label: '资料' }
+];
+
+const currentPath = Astro.url.pathname;
+---
+
+<header class="border-b border-default bg-page sticky top-0 z-40 backdrop-blur supports-[backdrop-filter]:bg-page/80">
+  <div class="container-shell flex items-center justify-between h-14">
+    <a href="/" class="flex items-center gap-2.5 group">
+      <span class="inline-block w-6 h-6 rounded bg-brand text-white text-[11px] font-bold leading-6 text-center">A</span>
+      <span class="font-semibold text-ink-900 dark:text-ink-100 group-hover:text-brand transition-colors">Ascend Notes</span>
+      <span class="hidden md:inline text-meta ml-1">· 昇腾实测档案</span>
+    </a>
+
+    <nav class="hidden md:flex items-center gap-6 text-sm">
+      {navItems.map(item => (
+        <a
+          href={item.href}
+          class:list={[
+            'nav-link',
+            currentPath === item.href && 'text-brand dark:text-brand-dark font-medium'
+          ]}
+        >
+          {item.label}
+        </a>
+      ))}
+    </nav>
+
+    <div class="flex items-center gap-3">
+      <button
+        id="theme-toggle"
+        aria-label="切换主题"
+        class="text-meta hover:text-brand transition-colors p-1.5 rounded"
+        title="切换主题"
+      >
+        <svg class="w-4 h-4 dark:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+        <svg class="w-4 h-4 hidden dark:inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="4"/>
+          <path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+        </svg>
+      </button>
+
+      <button id="mobile-menu-btn" class="md:hidden text-meta p-1.5" aria-label="菜单">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 12h18M3 6h18M3 18h18"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div id="mobile-menu" class="md:hidden hidden border-t border-default bg-page-2">
+    <div class="container-shell py-3 flex flex-col gap-2 text-sm">
+      {navItems.map(item => (
+        <a href={item.href} class="nav-link py-1.5">{item.label}</a>
+      ))}
+    </div>
+  </div>
+</header>
+
+<script>
+  // 移动端菜单
+  const btn = document.getElementById('mobile-menu-btn');
+  const menu = document.getElementById('mobile-menu');
+  btn?.addEventListener('click', () => menu?.classList.toggle('hidden'));
+</script>

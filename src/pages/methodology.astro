@@ -1,0 +1,82 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+
+const terms = [
+  { term: 'TTFT', alias: '首 token 延迟 / 首包延迟 / 手套延迟', def: 'Time To First Token，从请求发起到返回第一个 token 的耗时。' },
+  { term: 'TPOT', alias: '非首 token 延迟 / 单 token 生成时间', def: 'Time Per Output Token，第 2~N 个 token 的平均生成时间。' },
+  { term: 'E2E', alias: '端到端延迟', def: 'End-to-End，从请求发起到完整响应结束的总耗时。' },
+  { term: '并发', alias: 'Concurrency', def: '同时处理的请求数。' },
+  { term: '吞吐', alias: 'Throughput', def: '单位时间内生成的 token 总数。' },
+  { term: 'W8A8', alias: '权重量化 8bit，激活量化 8bit', def: '权重和激活均做 INT8 量化，精度损失小。' },
+  { term: 'W4A8 / W4A16', alias: '权重量化 4bit', def: '权重做 INT4，激活保持 INT8/FP16。模型体积显著缩小。' },
+  { term: 'CANN', alias: '昇腾异构计算架构', def: 'Huawei Compute Architecture for Neural Networks，昇腾的底层加速库。' },
+  { term: 'MindIE', alias: '昇腾推理引擎', def: 'Huawei Mind Inference Engine，昇腾官方推理引擎。' },
+  { term: 'HCCS', alias: '昇腾片间互联', def: 'Huawei Cache Coherent System，910 系列的卡间互联。' },
+  { term: 'RoCE', alias: 'RDMA over Converged Ethernet', def: '在以太网上跑 RDMA，用于跨节点 NPU 互联。' }
+];
+---
+
+<BaseLayout title="方法论 · Ascend Notes">
+  <div class="container-shell py-10">
+    <nav aria-label="Breadcrumb" class="text-meta text-sm mb-4 not-prose">
+      <ol class="flex items-center flex-wrap gap-1.5">
+        <li><a href="/" class="hover:text-brand">首页</a></li>
+        <li class="text-ink-400">›</li>
+        <li class="text-ink-700 dark:text-ink-200">方法论</li>
+      </ol>
+    </nav>
+
+    <header class="mb-8 max-w-3xl">
+      <h1 class="h1-title">方法论 · 术语表</h1>
+      <p class="mt-3 text-ink-700 dark:text-ink-200">
+        本档案对术语、测试方法、数据可信度的统一说明。
+      </p>
+    </header>
+
+    <h2 class="h2-title">测试方法</h2>
+    <ul class="text-ink-700 dark:text-ink-200 space-y-2 list-disc list-inside">
+      <li><b>基线来源</b>：所有数据来自华鲲振宇、华为、vLLM Ascend 官方提供的实测报告或公开基线表。</li>
+      <li><b>硬件环境</b>：具体服务器型号 / 卡数 / 互联方式见各芯片页 §2 硬件规格。</li>
+      <li><b>软件栈</b>：当前默认 CANN 8.0.RC2 + MindIE 2.0.RC2 + vLLM-Ascend (deepseekv4 / deepseekv4-a3)。</li>
+      <li><b>prompt / output</b>：每条数据点都标注 p/o 长度，并发数，参见数据表的"配置"列。</li>
+      <li><b>状态分级</b>：
+        <ul class="list-disc list-inside ml-6 mt-1">
+          <li><span class="badge badge-verified">已验证</span> — 多方资料交叉验证</li>
+          <li><span class="badge badge-partial">部分验证</span> — 仅单一来源或单次测试</li>
+          <li><span class="badge badge-unsupported">不支持</span> — 经测试硬件/软件不支持</li>
+          <li><span class="badge badge-untested">未测</span> — 暂未覆盖</li>
+        </ul>
+      </li>
+    </ul>
+
+    <h2 class="h2-title">术语表</h2>
+    <div class="overflow-x-auto rounded-md border border-default not-prose">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>术语</th>
+            <th>别名 / 口语</th>
+            <th>定义</th>
+          </tr>
+        </thead>
+        <tbody>
+          {terms.map(t => (
+            <tr>
+              <td><code class="font-mono font-semibold">{t.term}</code></td>
+              <td class="text-meta text-sm">{t.alias}</td>
+              <td class="text-sm">{t.def}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    <h2 class="h2-title">数据可信度</h2>
+    <ul class="text-ink-700 dark:text-ink-200 space-y-2 list-disc list-inside">
+      <li>所有数字都标注来源（src-001 等），指向 <a href="/sources">/sources</a> 上的原始资料。</li>
+      <li>原始资料中"约""左右"等口语化表述，本档案保留为 ~ 前缀。</li>
+      <li>不同来源数据冲突时，本档案以最新公开版本为准，并在 changelog 中说明。</li>
+      <li>采购决策请以官方报价单 + 实际 POC 为准，本档案仅供参考。</li>
+    </ul>
+  </div>
+</BaseLayout>

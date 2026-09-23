@@ -1,0 +1,248 @@
+---
+import { getEntry } from 'astro:content';
+import ChipLayout from '@layouts/ChipLayout.astro';
+import DataTable from '@components/DataTable.astro';
+import ChartBlock from '@components/ChartBlock.astro';
+import StatusBadge from '@components/StatusBadge.astro';
+import Footnote from '@components/Footnote.astro';
+
+const entry = await getEntry('chips', '910c');
+if (!entry) throw new Error('910c not found');
+const data = entry.data;
+
+const headings = [
+  { depth: 2, slug: 'overview', text: '1. 概述' },
+  { depth: 2, slug: 'specs', text: '2. 硬件规格' },
+  { depth: 2, slug: 'models', text: '3. 适配模型' },
+  { depth: 2, slug: 'perf', text: '4. 实测性能' },
+  { depth: 3, slug: 'perf-flash', text: '4.1 V4 Flash 单机' },
+  { depth: 3, slug: 'perf-pro', text: '4.2 V4 Pro 双机' },
+  { depth: 3, slug: 'perf-glm5', text: '4.3 GLM5 单机' },
+  { depth: 2, slug: 'cases', text: '5. 部署案例' },
+  { depth: 2, slug: 'sources', text: '6. 数据来源' }
+];
+
+const leftNav = [
+  {
+    title: '芯片 / 服务器',
+    items: [
+      { href: '/chips/3500-g3', label: '3500 G3' },
+      { href: '/chips/910b4', label: '910B4' },
+      { href: '/chips/910c', label: '910C', badge: '本页' },
+      { href: '/chips/950', label: '950 (路线图)' }
+    ]
+  },
+  {
+    title: '模型与基准',
+    items: [
+      { href: '/models', label: '模型适配总表' },
+      { href: '/benchmarks/ttft', label: 'TTFT' },
+      { href: '/benchmarks/throughput', label: '吞吐' },
+      { href: '/benchmarks/e2e', label: 'E2E' }
+    ]
+  }
+];
+
+const flashRows = data.models.filter(m => m.model.includes('V4-Flash')).map(m => ({
+  config: m.config,
+  ttft: Object.values(m.ttft_ms ?? {}).map(v => v != null ? `${v}ms` : '—').join(', '),
+  tps: m.throughput_tps ? `${m.throughput_tps} tps` : '—',
+  e2e: m.e2e_s ? `${m.e2e_s}s` : '—'
+}));
+
+const proRows = data.models.filter(m => m.model.includes('V4-Pro')).map(m => ({
+  config: m.config,
+  ttft: Object.values(m.ttft_ms ?? {}).map(v => v != null ? `${v}ms` : '—').join(', '),
+  tps: m.throughput_tps ? `${m.throughput_tps} tps` : '—',
+  e2e: m.e2e_s ? `${m.e2e_s}s` : '—'
+}));
+
+const glm5Rows = data.models.filter(m => m.model === 'GLM5').map(m => ({
+  config: m.config,
+  ttft: Object.values(m.ttft_ms ?? {}).map(v => v != null ? `${v}ms` : '—').join(', '),
+  tps: m.throughput_tps ? `${m.throughput_tps} tps` : '—',
+  e2e: m.e2e_s ? `${m.e2e_s}s` : '—'
+}));
+
+const flashChartOption = {
+  tooltip: { trigger: 'axis' },
+  legend: { data: ['吞吐 (tps)'], top: 0 },
+  grid: { left: 60, right: 20, top: 40, bottom: 60 },
+  xAxis: { type: 'category', data: ['p=4k/o=1k, c=64', 'p=8k/o=1k, c=64'], name: '测试条件' },
+  yAxis: { type: 'value', name: '吞吐 (tps)' },
+  series: [{
+    name: '吞吐 (tps)',
+    type: 'bar',
+    data: [4266.05, 6694.92],
+    itemStyle: { color: '#06c' },
+    label: { show: true, position: 'top' }
+  }]
+};
+
+const proChartOption = {
+  tooltip: { trigger: 'axis' },
+  legend: { data: ['吞吐 (tps)'], top: 0 },
+  grid: { left: 60, right: 20, top: 40, bottom: 60 },
+  xAxis: { type: 'category', data: ['低时延 8K', '高吞吐 32K', '128K prefix=0.9', '1M 待优化'], name: '场景' },
+  yAxis: { type: 'log', name: '吞吐 (tps, 对数)' },
+  series: [{
+    name: '吞吐 (tps)',
+    type: 'bar',
+    data: [27.50, 66.79, 103.04, 1.42],
+    itemStyle: { color: '#0075eb' }
+  }]
+};
+---
+
+<ChipLayout
+  title={`${data.chip_short} · Ascend Notes`}
+  description={`${data.chip} 模型适配、TTFT 与吞吐实测`}
+  breadcrumb={[
+    { label: '首页', href: '/' },
+    { label: '芯片', href: '/' },
+    { label: data.chip_short }
+  ]}
+  leftNav={leftNav}
+  headings={headings}
+>
+  <header class="mb-8">
+    <div class="text-meta text-sm mb-2">旗舰 · 新一代</div>
+    <h1 class="h1-title">昇腾 {data.chip_short} / {data.aliases[0]}</h1>
+    <p class="mt-3 text-ink-700 dark:text-ink-200">{data.summary}</p>
+  </header>
+
+  <h2 id="overview" class="anchor-offset h2-title">1. 概述</h2>
+  <ul class="text-ink-700 dark:text-ink-200 space-y-1.5">
+    <li><b>定位</b>：新一代 8 卡旗舰推理服务器，是 V4 Flash / V4 Pro / GLM5 等主流模型的推荐部署平台</li>
+    <li><b>别名</b>：{data.aliases.join(' / ')}（HuaKun AT958 B3 是华鲲振宇同配产品）</li>
+    <li><b>厂商</b>：{data.vendor}</li>
+    <li><b>内存</b>：单卡 {data.memory.per_card_gb}GB {data.memory.type}</li>
+    <li><b>算力</b>：FP16 {data.compute.fp16_tflops} TFLOPS · INT8 {data.compute.int8_tops} TOPS（单卡）</li>
+    <li><b>互联</b>：{data.interconnect.type} {data.interconnect.bandwidth_gbps} GB/s {data.interconnect.topology}</li>
+    <li><b>软件栈</b>：{data.software.os} · CANN {data.software.cann} · MindIE {data.software.mindie} · {data.software.frameworks.join(' / ')}</li>
+    <li><b>vLLM 镜像</b>：quay.io/ascend/vllm-ascend:deepseekv4-a3（参考 [src-008]）</li>
+  </ul>
+
+  <h2 id="specs" class="anchor-offset h2-title">2. 硬件规格</h2>
+  <DataTable
+    caption="Atlas 800I A3 560T / HuaKun AT958 B3 8 卡整机规格"
+    columns={[
+      { key: 'k', label: '项' },
+      { key: 'v', label: '规格' }
+    ]}
+    rows={[
+      { k: '形态', v: '10U 机架式，8 卡' },
+      { k: 'AI 加速卡', v: `8 颗 昇腾 910C (${data.memory.type}, ${data.memory.per_card_gb}GB/卡)` },
+      { k: '整机显存', v: '≥1TB 片上内存' },
+      { k: 'FP16 算力（单卡）', v: `≥${data.compute.fp16_tflops} TFLOPS` },
+      { k: 'FP16 算力（整机）', v: '≥4.4 PFLOPS (560T 版) / 5.4 PFLOPS (626T 版)' },
+      { k: 'INT8 算力（整机）', v: '≥8.96 POPS (560T) / 10.8 POPS (626T)' },
+      { k: '显存带宽', v: '≥3.2 TB/s/卡' },
+      { k: 'NPU 互联', v: '≥780 GB/s' },
+      { k: 'CPU', v: '4 颗 ARM 架构（鲲鹏下一代）' },
+      { k: 'CPU 频率 / 核数', v: '≥2.9GHz / 单颗 ≥80 核（共 ≥320 核）' },
+      { k: '内存', v: '≥1024GB DDR5' },
+      { k: '存储', v: '2×480G SATA SSD + 4×3.84T NVMe SSD' },
+      { k: '网络', v: '8×400GE 光口 + 2×10/25GE + 2×100GE' },
+      { k: '操作系统', v: data.software.os },
+      { k: '加速库', v: `${data.software.cann} · ${data.software.mindie}` },
+      { k: '推理框架', v: data.software.frameworks.join(' / ') }
+    ]}
+  />
+
+  <h2 id="models" class="anchor-offset h2-title">3. 适配模型</h2>
+  <div class="overflow-x-auto rounded-md border border-default not-prose">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>模型</th>
+          <th>量化</th>
+          <th>框架</th>
+          <th>状态</th>
+          <th>卡数</th>
+          <th>配置</th>
+        </tr>
+      </thead>
+      <tbody>
+        {data.models.map(m => (
+          <tr>
+            <td>{m.model}</td>
+            <td><code class="font-mono text-sm">{m.quantization}</code></td>
+            <td>{m.framework}</td>
+            <td><StatusBadge status={m.status} /></td>
+            <td class="text-right num">{m.cards}</td>
+            <td class="text-meta">{m.config}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+
+  <h2 id="perf" class="anchor-offset h2-title">4. 实测性能</h2>
+
+  <h3 id="perf-flash" class="anchor-offset h3-title">4.1 V4 Flash 单机</h3>
+  <p class="text-meta mb-4">数据来自 [src-002] 与 [src-005]。单机 8 卡 910C。</p>
+  <ChartBlock
+    id="flash-chart"
+    option={flashChartOption}
+    height="280px"
+    caption="图：V4-Flash W8A8 在 910C 单机上的吞吐"
+  />
+  <DataTable
+    caption="V4-Flash 单机实测"
+    columns={[
+      { key: 'config', label: '配置' },
+      { key: 'ttft', label: 'TTFT' },
+      { key: 'tps', label: '吞吐', align: 'right', mono: true },
+      { key: 'e2e', label: 'E2E', align: 'right', mono: true }
+    ]}
+    rows={flashRows}
+  />
+
+  <h3 id="perf-pro" class="anchor-offset h3-title">4.2 V4 Pro 双机</h3>
+  <p class="text-meta mb-4">
+    双机 910C（DP2+TP16），跑 V4-Pro W4A8 不同上下文长度。注意 1M 上下文下 Prefix Cache 当前不命中，是已知问题。
+  </p>
+  <ChartBlock
+    id="pro-chart"
+    option={proChartOption}
+    height="280px"
+    caption="图：V4-Pro W4A8 在 910C 双机不同上下文下的吞吐（对数轴）"
+  />
+  <DataTable
+    caption="V4-Pro 双机实测"
+    columns={[
+      { key: 'config', label: '配置' },
+      { key: 'ttft', label: 'TTFT' },
+      { key: 'tps', label: '吞吐', align: 'right', mono: true },
+      { key: 'e2e', label: 'E2E', align: 'right', mono: true }
+    ]}
+    rows={proRows}
+  />
+
+  <h3 id="perf-glm5" class="anchor-offset h3-title">4.3 GLM5 单机</h3>
+  <DataTable
+    caption="GLM5 单机实测"
+    columns={[
+      { key: 'config', label: '配置' },
+      { key: 'ttft', label: 'TTFT' },
+      { key: 'tps', label: '吞吐', align: 'right', mono: true },
+      { key: 'e2e', label: 'E2E', align: 'right', mono: true }
+    ]}
+    rows={glm5Rows}
+  />
+
+  <h2 id="cases" class="anchor-offset h2-title">5. 部署案例</h2>
+  <ul class="text-ink-700 dark:text-ink-200 space-y-2">
+    {data.use_cases.map(uc => <li>· {uc}</li>)}
+  </ul>
+
+  <h2 id="sources" class="anchor-offset h2-title">6. 数据来源</h2>
+  <Footnote sources={[
+    { id: 'src-002', title: '910C/910B 跑 DeepSeek-V4 数据汇总', date: '2026-09-23' },
+    { id: 'src-005', title: 'DeepSeek V4 模型性能基线 (Excel)', date: '2026-09-23' },
+    { id: 'src-007', title: '910C 服务器规格（投标报价）', date: '2026-09' },
+    { id: 'src-008', title: 'vLLM Ascend DeepSeek-V4-Pro Tutorial' },
+    { id: 'src-009', title: 'vLLM Ascend DeepSeek-V4-Flash Tutorial' }
+  ]} />
+</ChipLayout>

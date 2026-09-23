@@ -1,0 +1,64 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import fs from 'node:fs';
+import yaml from 'js-yaml';
+
+const raw = fs.readFileSync('src/data/sources.yaml', 'utf-8');
+const parsed = yaml.load(raw) as { sources: any[] };
+const sources = parsed.sources;
+
+const typeLabels: Record<string, string> = {
+  internal_photo: '内部截图',
+  internal_doc: '内部文档',
+  internal_xlsx: '内部 Excel',
+  internal_ppt: '内部 PPT',
+  external_url: '外部链接'
+};
+---
+
+<BaseLayout title="资料与来源 · Ascend Notes">
+  <div class="container-shell py-10">
+    <nav aria-label="Breadcrumb" class="text-meta text-sm mb-4 not-prose">
+      <ol class="flex items-center flex-wrap gap-1.5">
+        <li><a href="/" class="hover:text-brand">首页</a></li>
+        <li class="text-ink-400">›</li>
+        <li class="text-ink-700 dark:text-ink-200">资料</li>
+      </ol>
+    </nav>
+
+    <header class="mb-8 max-w-3xl">
+      <h1 class="h1-title">资料与来源</h1>
+      <p class="mt-3 text-ink-700 dark:text-ink-200">
+        每条数据、每张表都有可追溯的来源。本页列出全部 {sources.length} 条原始资料。
+        数据页脚处的脚注（如 <code class="font-mono text-sm">[src-001]</code>）会锚定到这里。
+      </p>
+    </header>
+
+    <div class="space-y-3 not-prose">
+      {sources.map(s => (
+        <article id={s.id} class="card">
+          <div class="flex items-start justify-between gap-4">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-1.5 flex-wrap">
+                <span class="badge badge-verified">{typeLabels[s.type] ?? s.type}</span>
+                <code class="font-mono text-xs text-meta">{s.id}</code>
+                {s.date && <span class="text-meta text-sm">{s.date}</span>}
+              </div>
+              <h2 class="text-base font-semibold text-ink-900 dark:text-ink-100 mb-1">{s.title}</h2>
+              {s.location && <p class="text-sm text-meta font-mono break-all">{s.location}</p>}
+              {s.url && <a href={s.url} target="_blank" rel="noopener" class="text-brand text-sm break-all">{s.url}</a>}
+              {s.notes && <p class="text-sm text-ink-700 dark:text-ink-200 mt-2">{s.notes}</p>}
+            </div>
+          </div>
+        </article>
+      ))}
+    </div>
+
+    <h2 class="h2-title">使用规范</h2>
+    <ul class="text-ink-700 dark:text-ink-200 space-y-1.5 list-disc list-inside">
+      <li>本页所有数据均来自上方列出的原始资料，转载需保留来源标注。</li>
+      <li>数字以原始资料为准；如发现矛盾，以原始 Excel/截图为准，本档案会在更新日志中说明。</li>
+      <li>本档案不构成采购建议，采购决策请以官方报价单为准。</li>
+    </ul>
+  </div>
+</BaseLayout>
