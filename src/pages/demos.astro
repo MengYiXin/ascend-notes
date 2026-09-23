@@ -1,6 +1,18 @@
----
+﻿---
 import BaseLayout from '@layouts/BaseLayout.astro';
+import DataTable from '@components/DataTable.astro';
 import { getCollection } from 'astro:content';
+
+// 实测性能基线(从原始 3500G3 性能基线表整理,2026-09-23)
+const perfBaselineRows = [
+  { model: 'DeepSeek-R1-671B', cards: 16, quantization: 'Int8', concurrency: 10,  input: 2048, output: 2048, ttft_ms: 796.57,  tpot_ms: 41.60, per_user_tps: 23.85, total_tps: 462.54 },
+  { model: 'DeepSeek-R1-671B', cards: 16, quantization: 'Int8', concurrency: 10,  input: 4096, output: 4096, ttft_ms: 1579.37, tpot_ms: 40.40, per_user_tps: 24.61, total_tps: 461.48 },
+  { model: 'DeepSeek-R1-671B', cards: 16, quantization: 'Int8', concurrency: 30,  input: 2048, output: 2048, ttft_ms: 1586.94, tpot_ms: 56.42, per_user_tps: 17.57, total_tps: 1010.78 },
+  { model: 'DeepSeek-R1-671B', cards: 16, quantization: 'Int8', concurrency: 30,  input: 4096, output: 1024, ttft_ms: 3211.02, tpot_ms: 63.81, per_user_tps: 15.30, total_tps: 2080.89 },
+  { model: 'DeepSeek-R1-671B', cards: 16, quantization: 'Int8', concurrency: 50,  input: 2048, output: 2048, ttft_ms: 2302.82, tpot_ms: 71.74, per_user_tps: 13.81, total_tps: 1323.03 },
+  { model: 'DeepSeek-R1-671B', cards: 16, quantization: 'Int8', concurrency: 50,  input: 4096, output: 1024, ttft_ms: 6836.67, tpot_ms: 76.36, per_user_tps: 12.99, total_tps: 1190.99 },
+  { model: 'DeepSeek-R1-671B', cards: 16, quantization: 'Int8', concurrency: 100, input: 1024, output: 1024, ttft_ms: 2690.73, tpot_ms: 94.78, per_user_tps: 10.43, total_tps: 1931.48 }
+];
 
 const chips = await getCollection('chips');
 const shippingChips = chips.filter(c => c.data.status === 'shipping');
@@ -183,6 +195,30 @@ const statusLabels = {
           </div>
         </details>
       ))}
+    </section>
+
+    <!-- 实测性能基线(从原始性能基线表整理,替换原 HuaKun 截图) -->
+    <section class="mb-10">
+      <h2 class="h2-title">实测性能基线</h2>
+      <p class="text-meta mb-4">
+        3500G3 16 卡集群 DeepSeek-R1-671B Int8 实测基线(数据来自原始性能基线表,2026-09):
+      </p>
+      <DataTable
+        caption="3500G3 × 16 卡 · DeepSeek-R1-671B Int8 实测数据"
+        columns={[
+          { key: 'model',         label: '模型', align: 'left' },
+          { key: 'cards',         label: '卡数', align: 'right', mono: true },
+          { key: 'quantization',  label: '类型' },
+          { key: 'concurrency',   label: '并发', align: 'right', mono: true },
+          { key: 'input',         label: '输入', align: 'right', mono: true },
+          { key: 'output',        label: '输出', align: 'right', mono: true },
+          { key: 'ttft_ms',       label: 'TTFT (ms)', align: 'right', mono: true },
+          { key: 'tpot_ms',       label: 'TPOT (ms)', align: 'right', mono: true },
+          { key: 'per_user_tps',  label: '单并发吞吐 (TPS/user)', align: 'right', mono: true },
+          { key: 'total_tps',     label: '总输出吞吐 (TPS)', align: 'right', mono: true }
+        ]}
+        rows={perfBaselineRows}
+      />
     </section>
 
     <!-- 收集说明 -->
