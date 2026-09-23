@@ -11,7 +11,7 @@ aliases:
   - Atlas 800I A2
   - 华为 Atlas 800I A2
 category: legacy
-status: deprecated
+status: shipping
 deprecated_redirect: /chips/3500-g3
 deprecated_note: '910B4 与 HuaKun AT3500 G3 / Atlas 800I A2 是同一台机器的不同代号，本页已合并到 3500 G3。'
 vendor: 华为 / 华鲲振宇
