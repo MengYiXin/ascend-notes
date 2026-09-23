@@ -1,38 +1,58 @@
-chip: HuaKun AT3500 G3
+chip: HuaKun AT3500 G3 (昇腾 910B4)
 chip_short: 3500 G3
 aliases:
-  - AT3500 G3
   - 3500 G3
+  - AT3500 G3
   - HuaKun AT3500 G3 (64G)
+  - 910B4
+  - 910B
+  - Atlas 800I A2
+  - 华为 Atlas 800I A2
 category: legacy
 status: shipping
-vendor: 华鲲振宇
+vendor: 华为 / 华鲲振宇
 release: '2024'
 
 summary: >-
-  16 卡集群部署的入门/主力推理方案，单卡 64GB HBM，主要承担
-  DeepSeek-R1-671B 等满血 MoE 模型的 Int8 长上下文推理。
+  华鲲振宇面向大模型推理的旗舰国产异构服务器（华为内部代号 910B4 / 910B / Atlas 800I A2）。
+  单机 8 卡 64GB HBM2e，鲲鹏 920 + 昇腾 910B4 全栈国产架构，
+  单机 FP16 算力 2.24 PFLOPS，可承载 7B~72B 模型推理与轻量训练；
+  双机两台 = 16 卡，可跑满血 671B（DeepSeek-R1 / V3 等）长上下文 Int8 推理。
 
 memory:
   per_card_gb: 64
   type: HBM2e
 
 compute:
-  fp16_tflops: 320
-  int8_tops: 640
-  bf16_tflops: 320
+  fp16_tflops: 280
+  fp32_tflops: 75
+  int8_tops: 560
+  bf16_tflops: 280
 
 interconnect:
   type: HCCS
   bandwidth_gbps: 392
-  topology: 全互联 16 卡
+  topology: HCCS FullMesh 8 卡全互联（双向 392 GB/s）
 
 system:
-  cpu: 鲲鹏 920 (ARM)
+  cpu: 鲲鹏 920 (ARM) ×4 @ 2.6 GHz
   cpu_cores: 192
   ram_gb: 1024
-  nic: 8×200GE QSFP (RoCEv2)
-  psu_w: 3200
+  ram_type: DDR4
+  ram_speed: 3200 MT/s
+  ram_slots: 32
+  ram_per_dimm: 16/32/64 GB
+  nic: 8×200GE QSFP (RoCEv2, NPU 直出)
+  psu_w: 10400
+  storage:
+    system: 2×480GB SATA SSD (RAID 1)
+    data: 2×3.84TB NVMe SSD (可扩)
+  pcie: 3×PCIe 4.0 插槽
+  cooling: 8×热插拔风扇模组, N+1 冗余, 风冷
+  form_factor: 4U 机架式
+  dimensions: 175mm × 447mm × 790mm (H × W × D)
+  operating_temp: 5°C ~ 35°C
+  hbm_bandwidth_gbps: 800
 
 software:
   os: openEuler 22.03
@@ -46,27 +66,143 @@ software:
 price_rmb_wan:
   low: 100
   high: 120
-  note: 16 卡集群整柜报价区间，含三年原厂维保
+  note: 8 卡整机报价区间（含三年原厂维保）；双机 16 卡整柜 200-240 万
 
 use_cases:
-  - 满血 671B 长上下文推理 (DeepSeek-R1)
-  - 高并发 (50-100) 大输入场景
-  - 政企私有化部署
+  - 满血 671B 长上下文 Int8 推理（双机 16 卡）
+  - Qwen3-32B / 70B / 235B-A22B 主力推理（单机 8 卡）
+  - DeepSeek-70B 推理（单机 4-8 卡）
+  - DeepSeek-V4 Flash / V4-Pro 部署
+  - LoRA 微调与轻量级训练
+  - 政务/企业私有化部署（信创合规）
 
 notes:
-  - 3500 G3 与 910B4 是**不同代次**的服务器 SKU——硬件层面 3500 G3
-    对应**昇腾 910_3** 芯片 + 16 卡 HCCS 全互联，定位是满血 671B 推理专用；
-    910B4 是 Atlas 800I A2 8 卡服务器，定位是中小模型主力
-  - 严格说「3500 G3 = 910B4」是指代不准确，本档案作为两个独立 SKU 记录
+  - 「3500 G3 / AT3500 G3 / 910B4 / 910B / Atlas 800I A2」是同一台机器的多种叫法
+  - 华为内部常用 910B4 作为芯片名/机器代号；华鲲振宇整机 SKU 为 AT3500 G3
+  - 单卡 FP16 280 TFLOPS @910B4；单机 8 卡整机 2.24 PFLOPS @FP16 / 4.48 POPS @INT8
+  - 显存 64GB HBM2e（也有 32GB 版本，按订单配置）；显存带宽 800 GB/s/卡
+  - 整机 FP32 算力 0.60 PFLOPS（8 卡）
+  - 能效比 0.6 PFLOPS/kW 超高
 
 models:
+  # === 单机 8 卡 - 中小模型主力 ===
+  - model: Qwen3-235B-A22B
+    params: 235B (MoE)
+    quantization: FP16
+    framework: MindIE
+    status: verified
+    cards: 8
+    config: 单机 3500 G3 (910B4), 8 卡
+    ttft_ms: {}
+    tpot_ms: {}
+    e2e_s: null
+    throughput_tps: null
+    vram_gb: null
+  - model: Qwen3-30B-A3B
+    params: 30B (MoE)
+    quantization: W8A8
+    framework: MindIE
+    status: verified
+    cards: 2
+    config: 单机 3500 G3, 2 卡, p=2k/o=2k, 并发=25
+    ttft_ms: {}
+    tpot_ms: {}
+    e2e_s: 4
+    throughput_tps: 340
+    vram_gb: null
+  - model: Qwen3-32B
+    params: 32B
+    quantization: W8A8
+    framework: MindIE
+    status: verified
+    cards: 2
+    config: 单机 3500 G3, 2 卡, p=2k/o=2k, 并发=25
+    ttft_ms: {}
+    tpot_ms: {}
+    e2e_s: 4
+    throughput_tps: 340
+    vram_gb: null
+  - model: DeepSeek-70B
+    params: 70B
+    quantization: W4A16
+    framework: MindIE
+    status: verified
+    cards: 4
+    config: 单机 3500 G3, 4 卡
+    ttft_ms: {}
+    tpot_ms: {}
+    e2e_s: null
+    throughput_tps: null
+    vram_gb: null
+  - model: DeepSeek-V4-Flash
+    params: 激活 ~4B
+    quantization: W8A8
+    framework: vLLM-Ascend
+    status: verified
+    cards: 8
+    config: 单机 3500 G3 (910B4), 8 卡, p=2k/o=2k, 并发=16
+    ttft_ms: {}
+    tpot_ms: {}
+    e2e_s: 2.1
+    throughput_tps: 775.74
+    vram_gb: null
+  - model: DeepSeek-V4-Pro
+    params: 激活 ~22B
+    quantization: W4A8
+    framework: vLLM-Ascend
+    status: verified
+    cards: 4
+    config: 单机 3500 G3 (910B4), 4 卡, p=4k/o=1k, 并发=16
+    ttft_ms: {}
+    tpot_ms: {}
+    e2e_s: 6.2
+    throughput_tps: 963.4
+    vram_gb: null
+  - model: DeepSeek-V4-Pro
+    params: 激活 ~22B
+    quantization: W4A8
+    framework: vLLM-Ascend
+    status: verified
+    cards: 4
+    config: 单机 3500 G3 (910B4), 4 卡, p=2k/o=2k, 并发=16
+    ttft_ms: {}
+    tpot_ms: {}
+    e2e_s: 5.4
+    throughput_tps: 453.96
+    vram_gb: null
+  - model: Qwen3.6-278
+    params: 278B (MoE)
+    quantization: INT4
+    framework: vLLM-Ascend
+    status: verified
+    cards: 4
+    config: 单机 3500 G3, 4 卡 + KV Cache
+    ttft_ms: {}
+    tpot_ms: {}
+    e2e_s: null
+    throughput_tps: null
+    vram_gb: 140
+  - model: VL-32B
+    params: 32B
+    quantization: INT8
+    framework: vLLM-Ascend
+    status: verified
+    cards: 4
+    config: 单机 3500 G3, 4 卡, 与 Qwen3.6-278 4+4 混合部署
+    ttft_ms: {}
+    tpot_ms: {}
+    e2e_s: null
+    throughput_tps: null
+    vram_gb: 36
+
+  # === 双机 16 卡 - 满血 671B ===
   - model: DeepSeek-R1-671B
     params: 671B (MoE)
     quantization: Int8
     framework: vLLM-Ascend
     status: verified
     cards: 16
-    config: 'p=2048/o=2048, 并发=10'
+    config: '双机 3500 G3, p=2048/o=2048, 并发=10'
     ttft_ms:
       '10': 796.57
       '30': 1586.94
@@ -86,7 +222,7 @@ models:
     framework: vLLM-Ascend
     status: verified
     cards: 16
-    config: 'p=4096/o=4096, 并发=10'
+    config: '双机 3500 G3, p=4096/o=4096, 并发=10'
     ttft_ms:
       '10': 1579.37
     tpot_ms:
@@ -100,7 +236,7 @@ models:
     framework: vLLM-Ascend
     status: verified
     cards: 16
-    config: 'p=4096/o=1024, 并发=30'
+    config: '双机 3500 G3, p=4096/o=1024, 并发=30'
     ttft_ms:
       '30': 3211.02
     tpot_ms:
@@ -114,7 +250,7 @@ models:
     framework: vLLM-Ascend
     status: verified
     cards: 16
-    config: 'p=1024/o=1024, 并发=100'
+    config: '双机 3500 G3, p=1024/o=1024, 并发=100'
     ttft_ms:
       '100': 2690.73
     tpot_ms:
