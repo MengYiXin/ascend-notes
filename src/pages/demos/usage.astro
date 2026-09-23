@@ -1,0 +1,158 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import DataTable from '@components/DataTable.astro';
+
+// 实测性能基线(从原始 3500G3 性能基线表整理,2026-09-23)
+const perfBaselineRows = [
+  { model: 'DeepSeek-R1-671B', cards: 16, quantization: 'Int8', concurrency: 10,  input: 2048, output: 2048, ttft_ms: 796.57,  tpot_ms: 41.60, per_user_tps: 23.85, total_tps: 462.54 },
+  { model: 'DeepSeek-R1-671B', cards: 16, quantization: 'Int8', concurrency: 10,  input: 4096, output: 4096, ttft_ms: 1579.37, tpot_ms: 40.40, per_user_tps: 24.61, total_tps: 461.48 },
+  { model: 'DeepSeek-R1-671B', cards: 16, quantization: 'Int8', concurrency: 30,  input: 2048, output: 2048, ttft_ms: 1586.94, tpot_ms: 56.42, per_user_tps: 17.57, total_tps: 1010.78 },
+  { model: 'DeepSeek-R1-671B', cards: 16, quantization: 'Int8', concurrency: 30,  input: 4096, output: 1024, ttft_ms: 3211.02, tpot_ms: 63.81, per_user_tps: 15.30, total_tps: 2080.89 },
+  { model: 'DeepSeek-R1-671B', cards: 16, quantization: 'Int8', concurrency: 50,  input: 2048, output: 2048, ttft_ms: 2302.82, tpot_ms: 71.74, per_user_tps: 13.81, total_tps: 1323.03 },
+  { model: 'DeepSeek-R1-671B', cards: 16, quantization: 'Int8', concurrency: 50,  input: 4096, output: 1024, ttft_ms: 6836.67, tpot_ms: 76.36, per_user_tps: 12.99, total_tps: 1190.99 },
+  { model: 'DeepSeek-R1-671B', cards: 16, quantization: 'Int8', concurrency: 100, input: 1024, output: 1024, ttft_ms: 2690.73, tpot_ms: 94.78, per_user_tps: 10.43, total_tps: 1931.48 }
+];
+---
+
+<BaseLayout
+  title="使用效果 · DeepSeek-V4-Pro 部署实测 · Ascend Notes"
+  description="DeepSeek-V4-Pro 在 910B4 / 910C 上的部署命令 + 实测基线图"
+>
+  <div class="container-shell py-10">
+    <nav aria-label="Breadcrumb" class="text-meta text-sm mb-4 not-prose">
+      <ol class="flex items-center flex-wrap gap-1.5">
+        <li><a href="/" class="hover:text-brand">首页</a></li>
+        <li class="text-ink-400">›</li>
+        <li><a href="/demos" class="hover:text-brand">使用效果</a></li>
+        <li class="text-ink-400">›</li>
+        <li class="text-ink-700 dark:text-ink-200">部署实测</li>
+      </ol>
+    </nav>
+
+    <header class="mb-8 max-w-3xl">
+      <h1 class="h1-title">使用效果 · DeepSeek-V4-Pro 部署实测</h1>
+      <p class="mt-3 text-ink-700 dark:text-ink-200">
+        本页记录 DeepSeek-V4-Pro (W4A8 MTP) 在 910B4 / 910C 上的实际部署流程与实测数据。命令均来自
+        <code class="font-mono text-sm">vllm-ascend</code> 官方文档 (quay.io/ascend/vllm-ascend:deepseekv4 / -a3)，可作为客户现场部署的标准参考。
+      </p>
+    </header>
+
+    <!-- 1. 硬件需求 -->
+    <section class="mb-10">
+      <h2 class="h2-title mb-3">1. 硬件需求</h2>
+      <ul class="text-ink-700 dark:text-ink-200 space-y-1.5">
+        <li><b>最小部署</b>: 2 台 Atlas 800I A3 (128G × 8) 或 4 台 Atlas 800I A2 (64G × 8)</li>
+        <li><b>推荐部署</b>: 4 台以上 (PD 分离可扩展到 8+ 机)</li>
+        <li><b>系统盘 / 数据盘</b>: 模型权重 ≈ 700 GB (W4A8), 需 NVMe RAID</li>
+        <li><b>网络</b>: RoCEv2 / HCCS 全互联</li>
+      </ul>
+    </section>
+
+    <!-- 2. Docker 启动 -->
+    <section class="mb-10">
+      <h2 class="h2-title mb-3">2. Docker 启动</h2>
+      <p class="text-meta mb-3">在每台机器上运行：</p>
+
+      <h3 class="h3-title mb-2 mt-4">A2 系列 (910B4)</h3>
+      <pre class="not-prose rounded-md border border-default bg-page-2 p-4 text-xs font-mono overflow-x-auto"><code>{`# A2 系列 (Atlas 800I A2 = 910B4)
+export IMAGE=quay.io/ascend/vllm-ascend:deepseekv4
+export NAME=vllm-ascend
+docker run --rm \\
+  --name $NAME \\
+  --net=host \\
+  --shm-size=512g \\
+  --device /dev/davinci0 --device /dev/davinci1 --device /dev/davinci2 --device /dev/davinci3 \\
+  --device /dev/davinci4 --device /dev/davinci5 --device /dev/davinci6 --device /dev/davinci7 \\
+  --device /dev/davinci_manager --device /dev/devmm_svm --device /dev/hisi_hdc \\
+  -v /usr/local/dcmi:/usr/local/dcmi \\
+  -v /usr/local/Ascend/driver:/usr/local/Ascend/driver \\
+  -v /etc/ascend_install.info:/etc/ascend_install.info \\
+  -v /etc/hccn.conf:/etc/hccn.conf \\
+  -v /mnt/sfs_turbo/.cache:/root/.cache \\
+  -it $IMAGE bash`}</code></pre>
+
+      <h3 class="h3-title mb-2 mt-4">A3 系列 (910C)</h3>
+      <pre class="not-prose rounded-md border border-default bg-page-2 p-4 text-xs font-mono overflow-x-auto"><code>{`# A3 系列 (Atlas 800I A3 = 910C)
+export IMAGE=quay.io/ascend/vllm-ascend:deepseekv4-a3
+# 同上，但 --device 列到 davinci15 (16 卡)`}</code></pre>
+    </section>
+
+    <!-- 3. 关键环境变量 -->
+    <section class="mb-10">
+      <h2 class="h2-title mb-3">3. 关键环境变量</h2>
+      <pre class="not-prose rounded-md border border-default bg-page-2 p-4 text-xs font-mono overflow-x-auto"><code>{`# 关键环境变量
+export HCCL_IF_IP=$local_ip
+export HCCL_BUFFSIZE=1024
+export ASCEND_RT_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
+export OMP_PROC_BIND=false
+export OMP_NUM_THREADS=10
+export PYTORCH_NPU_ALLOC_CONF=expandable_segments:True
+export ACL_OP_INIT_MODE=1
+export VLLM_ENGINE_READY_TIMEOUT_S=3600
+export HCCL_OP_EXPANSION_MODE=AIV
+export USE_MULTI_BLOCK_POOL=1
+export USE_MULTI_GROUPS_KV_CACHE=1
+export TASK_QUEUE_ENABLE=1
+export VLLM_ASCEND_ENABLE_FLASHCOMM1=1
+sysctl -w vm.swappiness=0
+sysctl -w kernel.numa_balancing=0`}</code></pre>
+    </section>
+
+    <!-- 4. vLLM serve 启动 (Node0) -->
+    <section class="mb-10">
+      <h2 class="h2-title mb-3">4. vLLM serve 启动 (Node0)</h2>
+      <pre class="not-prose rounded-md border border-default bg-page-2 p-4 text-xs font-mono overflow-x-auto"><code>{`# vllm serve 启动 (A2 系列, Node0)
+vllm serve /root/.cache/modelscope/hub/models/vllm-ascend/DeepSeek-V4-Pro-w4a8-mtp \\
+  --host 0.0.0.0 --port 10010 \\
+  --max_model_len 133072 \\
+  --max-num-batched-tokens 4096 \\
+  --served-model-name dsv4 \\
+  --gpu-memory-utilization 0.9 \\
+  --max-num-seqs 4 \\
+  --data-parallel-size 4 \\
+  --tensor-parallel-size 8 \\
+  --enable-expert-parallel \\
+  --quantization ascend \\
+  --enable-chunked-prefill \\
+  --enable-prefix-caching \\
+  --tokenizer-mode deepseek_v4 \\
+  --tool-call-parser deepseek_v4 \\
+  --reasoning-parser deepseek_v4 \\
+  --async-scheduling`}</code></pre>
+    </section>
+
+    <!-- 5. 实测性能基线(原 HuaKun 截图已替换为 DataTable) -->
+    <section class="mb-10">
+      <h2 class="h2-title mb-3">5. 实测性能基线</h2>
+      <p class="text-meta mb-3">3500G3 16 卡集群 DeepSeek-R1-671B Int8 实测基线 (来自 3500G3 性能基线表, 2026-09):</p>
+      <DataTable
+        caption="3500 G3 16 卡集群 · DS-R1-671B Int8 性能基线表"
+        columns={[
+          { key: 'model',         label: '模型', align: 'left' },
+          { key: 'cards',         label: '卡数', align: 'right', mono: true },
+          { key: 'quantization',  label: '类型' },
+          { key: 'concurrency',   label: '并发', align: 'right', mono: true },
+          { key: 'input',         label: '输入', align: 'right', mono: true },
+          { key: 'output',        label: '输出', align: 'right', mono: true },
+          { key: 'ttft_ms',       label: 'TTFT (ms)', align: 'right', mono: true },
+          { key: 'tpot_ms',       label: 'TPOT (ms)', align: 'right', mono: true },
+          { key: 'per_user_tps',  label: '单并发吞吐 (TPS/user)', align: 'right', mono: true },
+          { key: 'total_tps',     label: '总输出吞吐 (TPS)', align: 'right', mono: true }
+        ]}
+        rows={perfBaselineRows}
+      />
+    </section>
+
+    <!-- 现场验收清单 -->
+    <aside class="not-prose my-6 text-sm rounded-md border border-default bg-page-2 p-4">
+      <div class="text-meta uppercase tracking-wider text-xs font-medium mb-2">现场验收清单</div>
+      <ol class="space-y-1.5 list-decimal list-inside text-ink-700 dark:text-ink-200">
+        <li>docker 启动后 <code class="font-mono text-xs">npu-smi info</code> 能看到全部 NPU 设备</li>
+        <li>vllm serve 启动后日志显示 <code class="font-mono text-xs">Server started on http://0.0.0.0:10010</code></li>
+        <li>curl 测试 <code class="font-mono text-xs">/v1/models</code> 返回 <code class="font-mono text-xs">dsv4</code></li>
+        <li>压测: <code class="font-mono text-xs">vllm bench serve</code> 或 <code class="font-mono text-xs">guidellm</code></li>
+        <li>记录 TTFT / TPOT / 吞吐到本页 changelog</li>
+      </ol>
+    </aside>
+  </div>
+</BaseLayout>
