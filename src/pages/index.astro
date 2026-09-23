@@ -7,14 +7,15 @@ import ChartBlock from '@components/ChartBlock.astro';
 import Footnote from '@components/Footnote.astro';
 
 const chips = await getCollection('chips');
+const visibleChips = chips.filter(c => c.data.status !== 'deprecated');
 
-// 关键快照数据：3500 G3 vs 910C 在同一档并发下的 TTFT 对比
+// 关键快照数据：3500 G3 (双机/单机) vs 910C 在同一档并发下的 TTFT 对比
 const snapshotRows = [
-  { device: '3500 G3 ×16 卡', model: 'DeepSeek-R1-671B Int8', concurrency: 30, ttft_ms: '1586.94', tpot_ms: '56.42', throughput: '1010.78 tps' },
-  { device: '910C 单机',     model: 'DeepSeek-V4-Flash W8A8', concurrency: 64, ttft_ms: '~11000', tpot_ms: '—', throughput: '6694.92 tps' },
-  { device: '910C 双机',     model: 'DeepSeek-V4-Pro W4A8', concurrency: 16, ttft_ms: '~5600', tpot_ms: '—', throughput: '2127.68 tps' },
-  { device: '910B 单机',     model: 'DeepSeek-V4-Flash W8A8', concurrency: 16, ttft_ms: '~2100', tpot_ms: '—', throughput: '775.74 tps' },
-  { device: '910B 四卡',     model: 'DeepSeek-V4-Pro W4A8', concurrency: 16, ttft_ms: '~6200', tpot_ms: '—', throughput: '963.4 tps' }
+  { device: '3500 G3 双机 16 卡', model: 'DeepSeek-R1-671B Int8', concurrency: 30, ttft_ms: '1586.94', tpot_ms: '56.42', throughput: '1010.78 tps' },
+  { device: '910C 单机',         model: 'DeepSeek-V4-Flash W8A8', concurrency: 64, ttft_ms: '~11000', tpot_ms: '—', throughput: '6694.92 tps' },
+  { device: '910C 双机',         model: 'DeepSeek-V4-Pro W4A8', concurrency: 16, ttft_ms: '~5600', tpot_ms: '—', throughput: '2127.68 tps' },
+  { device: '3500 G3 单机 8 卡', model: 'DeepSeek-V4-Flash W8A8', concurrency: 16, ttft_ms: '~2100', tpot_ms: '—', throughput: '775.74 tps' },
+  { device: '3500 G3 单机 4 卡', model: 'DeepSeek-V4-Pro W4A8', concurrency: 16, ttft_ms: '~6200', tpot_ms: '—', throughput: '963.4 tps' }
 ];
 
 // 首页图表：吞吐对比
@@ -23,7 +24,7 @@ const tpsChartOption = {
   grid: { left: 60, right: 20, top: 30, bottom: 60 },
   xAxis: {
     type: 'category',
-    data: ['3500 G3 ×16\nDS-R1-671B Int8', '910C 单机\nDS-V4-Flash', '910C 双机\nDS-V4-Pro', '910B 单机\nDS-V4-Flash', '910B 四卡\nDS-V4-Pro'],
+    data: ['3500 G3 双机\nDS-R1-671B Int8', '910C 单机\nDS-V4-Flash', '910C 双机\nDS-V4-Pro', '3500 G3 单机\nDS-V4-Flash', '3500 G3 四卡\nDS-V4-Pro'],
     axisLabel: { fontSize: 10 }
   },
   yAxis: { type: 'value', name: '吞吐 (tps)' },
@@ -43,7 +44,7 @@ const tpsChartOption = {
       <div class="max-w-3xl">
         <div class="text-meta text-sm mb-3">昇腾推理实测档案 · Ascend Notes</div>
         <h1 class="text-4xl md:text-5xl font-semibold tracking-tight text-ink-900 dark:text-ink-100">
-          Ascend 3500 G3 · 910B4 · 910C · 950
+          3500 G3 · 910C · 950
         </h1>
         <p class="mt-4 text-lg text-ink-700 dark:text-ink-200">
           模型适配矩阵、首 token 延迟 (TTFT)、并发与吞吐实测。
@@ -54,16 +55,19 @@ const tpsChartOption = {
           <span class="font-mono">TPOT</span> = 非首 token 平均延迟 ·
           <span class="font-mono">E2E</span> = 端到端
         </p>
+        <p class="mt-3 text-meta">
+          注：<b>3500 G3 / 910B4 / 910B / Atlas 800I A2</b> 指同一台机器，本档案统一用 <b>3500 G3</b> 记录。
+        </p>
       </div>
     </div>
   </section>
 
   <!-- 芯片速览 -->
   <section class="container-shell py-12">
-    <h2 class="h2-title mt-0">四款芯片 / 服务器</h2>
+    <h2 class="h2-title mt-0">三款芯片 / 服务器</h2>
     <p class="text-meta mb-6">硬件参数（带宽 / 显存 / 算力）是基础，性能表现（延迟 / 吞吐 / 显示效果）是应用。</p>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 not-prose">
-      {chips.map(c => (
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 not-prose">
+      {visibleChips.map(c => (
         <ChipCard
           href={`/chips/${c.id}`}
           title={c.data.chip_short}
@@ -156,23 +160,28 @@ const tpsChartOption = {
             <th>模型</th>
             <th>参数量</th>
             <th class="text-center">3500 G3</th>
-            <th class="text-center">910B4</th>
             <th class="text-center">910C</th>
             <th class="text-center">950</th>
           </tr>
         </thead>
         <tbody>
-          <tr><td>DeepSeek-R1-671B</td><td class="text-meta">671B MoE</td><td class="text-center">✓ Int8</td><td class="text-center">—</td><td class="text-center">—</td><td class="text-center">—</td></tr>
-          <tr><td>DeepSeek-V4-Flash</td><td class="text-meta">激活 ~4B</td><td class="text-center">—</td><td class="text-center">✓ W8A8</td><td class="text-center">✓ W8A8</td><td class="text-center">—</td></tr>
-          <tr><td>DeepSeek-V4-Pro</td><td class="text-meta">激活 ~22B</td><td class="text-center">—</td><td class="text-center">✓ W4A8</td><td class="text-center">✓ W4A8</td><td class="text-center">—</td></tr>
-          <tr><td>GLM5</td><td class="text-meta">—</td><td class="text-center">—</td><td class="text-center">—</td><td class="text-center">✓ W4A8</td><td class="text-center">—</td></tr>
-          <tr><td>Qwen3-235B-A22B</td><td class="text-meta">235B MoE</td><td class="text-center">—</td><td class="text-center">✓ FP16</td><td class="text-center">—</td><td class="text-center">—</td></tr>
-          <tr><td>Qwen3-30B-A3B</td><td class="text-meta">30B MoE</td><td class="text-center">—</td><td class="text-center">✓ W8A8</td><td class="text-center">—</td><td class="text-center">—</td></tr>
-          <tr><td>Qwen3-32B</td><td class="text-meta">32B</td><td class="text-center">—</td><td class="text-center">✓ W8A8</td><td class="text-center">—</td><td class="text-center">—</td></tr>
-          <tr><td>DeepSeek-70B</td><td class="text-meta">70B</td><td class="text-center">—</td><td class="text-center">✓ W4A16</td><td class="text-center">—</td><td class="text-center">—</td></tr>
+          <tr><td>DeepSeek-R1-671B</td><td class="text-meta">671B MoE</td><td class="text-center">✓ Int8</td><td class="text-center">—</td><td class="text-center">—</td></tr>
+          <tr><td>DeepSeek-V4-Flash</td><td class="text-meta">激活 ~4B</td><td class="text-center">✓ W8A8</td><td class="text-center">✓ W8A8</td><td class="text-center">—</td></tr>
+          <tr><td>DeepSeek-V4-Pro</td><td class="text-meta">激活 ~22B</td><td class="text-center">✓ W4A8</td><td class="text-center">✓ W4A8</td><td class="text-center">—</td></tr>
+          <tr><td>GLM5</td><td class="text-meta">—</td><td class="text-center">—</td><td class="text-center">✓ W4A8</td><td class="text-center">—</td></tr>
+          <tr><td>Qwen3-235B-A22B</td><td class="text-meta">235B MoE</td><td class="text-center">✓ FP16</td><td class="text-center">—</td><td class="text-center">—</td></tr>
+          <tr><td>Qwen3-30B-A3B</td><td class="text-meta">30B MoE</td><td class="text-center">✓ W8A8</td><td class="text-center">—</td><td class="text-center">—</td></tr>
+          <tr><td>Qwen3-32B</td><td class="text-meta">32B</td><td class="text-center">✓ W8A8</td><td class="text-center">—</td><td class="text-center">—</td></tr>
+          <tr><td>DeepSeek-70B</td><td class="text-meta">70B</td><td class="text-center">✓ W4A16</td><td class="text-center">—</td><td class="text-center">—</td></tr>
+          <tr><td>Qwen3.6-278</td><td class="text-meta">278B MoE</td><td class="text-center">✓ INT4</td><td class="text-center">—</td><td class="text-center">—</td></tr>
+          <tr><td>VL-32B</td><td class="text-meta">32B</td><td class="text-center">✓ INT8</td><td class="text-center">—</td><td class="text-center">—</td></tr>
         </tbody>
       </table>
     </div>
+
+    <p class="mt-3 text-meta text-sm">
+      注：3500 G3 同时支持单机 8 卡（中小模型）与双机 16 卡（满血 671B）。
+    </p>
 
     <div class="mt-3 text-meta text-sm">
       <span class="badge badge-verified mr-2">已验证</span>
@@ -203,8 +212,8 @@ const tpsChartOption = {
 
     <div class="mt-8">
       <Footnote sources={[
-        { id: 'src-001', title: '3500G3 性能基线', date: '2026-09-23' },
-        { id: 'src-002', title: '910C/910B 跑 DeepSeek-V4 数据汇总', date: '2026-09-23' },
+        { id: 'src-001', title: '3500G3 性能基线（双机 16 卡 DS-R1-671B Int8）', date: '2026-09-23' },
+        { id: 'src-002', title: '910C/3500 G3 跑 DeepSeek-V4 数据汇总', date: '2026-09-23' },
         { id: 'src-005', title: 'DeepSeek V4 模型性能基线 (Excel)', date: '2026-09-23' }
       ]} />
     </div>
