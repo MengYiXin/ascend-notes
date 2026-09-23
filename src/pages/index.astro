@@ -7,7 +7,8 @@ import ChartBlock from '@components/ChartBlock.astro';
 import Footnote from '@components/Footnote.astro';
 
 const chips = await getCollection('chips');
-const visibleChips = chips.filter(c => c.data.status !== 'deprecated');
+// 过滤掉已合并到主 SKU 的别名 entry (带 deprecated_redirect 字段的)
+const visibleChips = chips.filter(c => !c.data.deprecated_redirect);
 
 // 关键快照数据：3500 G3 (双机/单机) vs 910C 在同一档并发下的 TTFT 对比
 const snapshotRows = [
